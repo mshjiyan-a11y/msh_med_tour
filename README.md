@@ -1,5 +1,303 @@
 # MSH Med Tour - Medical Tourism Management System
 
+## 🏥 Overview
+
+MSH Med Tour is a comprehensive medical tourism management system with integrated Facebook Lead Ads support. It enables healthcare providers and distributors to manage patient journeys, appointments, and lead generation through Meta's Lead Ads platform.
+
+**Current Version:** 2.0.0 (Facebook Lead Ads Integration)
+
+### ✨ Key Features
+
+- **Facebook Lead Ads Integration** - Real-time lead capture from Meta Lead Ads
+- **Lead Scoring & Analytics** - AI-powered lead quality assessment
+- **Multi-Distributor Support** - Manage multiple healthcare distribution partners
+- **Patient Journey Management** - End-to-end patient coordination
+- **Medical Modules** - Dental, Eye, Hair, Bariatric, Aesthetic, IVF services
+- **Appointment Scheduling** - Integrated calendar and appointment system
+- **Document Management** - Patient document storage and retrieval
+- **Communication Hub** - Tickets, messages, feedback management
+- **Role-Based Access Control** - Granular permission management
+- **Real-time Updates** - WebSocket support for live data
+- **Multi-language Support** - Turkish and English interfaces
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8+
+- SQLite (included)
+- Modern web browser
+
+### Installation
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/mshjiyan-a11y/msh_med_tour.git
+cd msh_med_tour
+```
+
+2. **Create virtual environment:**
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. **Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configure environment:**
+```bash
+cp .env.example .env
+# Edit .env with your settings
+```
+
+5. **Run the application:**
+```bash
+python run.py
+```
+
+6. **Access the application:**
+- Open browser: http://localhost:5000
+- Default credentials will be shown in terminal
+
+---
+
+## 📱 Facebook Lead Ads Setup
+
+### For Superadmin
+
+1. Go to Admin Panel → Distributors
+2. Select a distributor
+3. Scroll to "Facebook Lead Ads Konfigürasyonu"
+4. Enter your Meta credentials:
+   - **Page ID**: Your Facebook Page ID
+   - **Form ID**: Your Lead Form ID
+   - **Access Token**: Long-lived access token (60+ days valid)
+   - **Sync Interval**: How often to check for new leads (minutes)
+5. Click "Kaydet" (Save)
+6. Click "Bağlantı Testi" (Test Connection)
+7. Click "Şimdi Senkronize Et" (Sync Now)
+
+### Getting Meta Credentials
+
+1. **Page ID & Form ID:**
+   - Go to Facebook Ads Manager
+   - Select your page and lead form
+   - Copy Page ID and Form ID
+
+2. **Access Token:**
+   - Go to Meta for Developers: https://developers.facebook.com
+   - Create an app or use existing one
+   - Generate long-lived access token
+   - **Keep it secure!**
+
+---
+
+## 📊 Facebook Leads Management
+
+### Dashboard Overview
+- Admin Panel shows real-time lead count
+- Quick access to "Facebook Lead Ads" card
+- One-click sync and configuration
+
+### Lead Listing
+- **URL:** http://localhost:5000/admin/facebook-leads
+- **Features:**
+  - View all captured leads
+  - Filter by status, score, distributor
+  - Search by name, email, phone
+  - Quality score badges (High/Medium/Low)
+  - Lead assignment tracking
+
+### Lead Scoring
+- **Automatic scoring** on lead creation
+- **5-factor assessment:**
+  - Data completeness (20 points)
+  - Contact availability (20 points)
+  - Form quality (20 points)
+  - Timing relevance (20 points)
+  - Historical performance (20 points)
+
+**Total: 0-100 points**
+- 🟢 70+: High quality
+- 🟡 40-70: Medium quality  
+- 🔴 0-40: Low quality
+
+### Lead Status Flow
+1. **new** - Freshly imported lead
+2. **contacted** - Sales team reached out
+3. **qualified** - Lead meets requirements
+4. **unqualified** - Doesn't meet criteria
+5. **converted** - Patient acquired
+
+---
+
+## 🏗️ System Architecture
+
+### Core Components
+
+**Database Models:**
+- `User` - System users with roles
+- `Distributor` - Healthcare partner organizations
+- `Patient` - Patient records
+- `FacebookLead` - Meta lead data
+- `MetaAPIConfig` - Per-distributor Meta settings
+- `LeadInteraction` - Audit trail
+
+**Services:**
+- `MetaLeadService` - Meta API integration
+- `LeadScoringService` - AI quality assessment
+- `BulkOperationsService` - Batch processing
+- `LeadNotificationsService` - Email alerts
+- `LeadAnalyticsService` - Reporting & insights
+
+**Routes:**
+- `/admin/*` - Admin panel
+- `/admin/facebook-leads` - Lead management
+- `/api/*` - REST API endpoints
+- `/auth/*` - Authentication
+
+---
+
+## 🔧 Configuration
+
+### .env File
+```
+FLASK_ENV=development
+SECRET_KEY=your-secret-key-here
+DATABASE_URL=sqlite:///app.db
+
+# Facebook/Meta
+META_API_VERSION=v18.0
+
+# Email (optional)
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Features
+ENABLE_HAIR=True
+ENABLE_TEETH=True
+ENABLE_EYE=True
+```
+
+---
+
+## 📚 Documentation
+
+- **[API Reference](API_REFERENCE.md)** - REST API endpoints
+- **[Meta Integration Guide](META_LEAD_INTEGRATION_DOCS.md)** - Detailed setup
+- **[Advanced Features](FACEBOOK_LEADS_ADVANCED_DOCS.md)** - Scoring, analytics
+- **[Architecture](SYSTEM_ARCHITECTURE.md)** - System design
+- **[Deployment Guide](DEPLOYMENT_CHECKLIST.md)** - Production setup
+
+---
+
+## 🧪 Testing
+
+### Run tests:
+```bash
+python -m pytest tests/
+
+# With coverage:
+python -m pytest --cov=app tests/
+```
+
+### Test Meta Integration:
+```bash
+python test_meta_integration.py
+```
+
+---
+
+## 📦 Project Structure
+
+```
+msh_med_tour/
+├── app/
+│   ├── models/              # Database models
+│   ├── routes/              # Flask blueprints
+│   ├── services/            # Business logic
+│   ├── templates/           # HTML templates
+│   ├── static/              # CSS, JS, uploads
+│   └── utils/               # Helper functions
+├── migrations/              # Database migrations
+├── scripts/                 # Setup scripts
+├── requirements.txt         # Python dependencies
+├── config.py               # Configuration
+├── run.py                  # Entry point
+└── README.md               # This file
+```
+
+---
+
+## 🔐 Security
+
+- Role-Based Access Control (RBAC)
+- Password hashing with Werkzeug
+- CSRF protection
+- SQL injection prevention (SQLAlchemy ORM)
+- Secure token management
+- API key encryption
+
+### Production Checklist:
+- [ ] Use environment variables for secrets
+- [ ] Enable HTTPS
+- [ ] Set DEBUG=False
+- [ ] Use PostgreSQL instead of SQLite
+- [ ] Configure CORS properly
+- [ ] Enable rate limiting
+- [ ] Set up monitoring & logging
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see LICENSE file for details.
+
+---
+
+## 👥 Support
+
+For issues and questions:
+- 📧 Email: mshjiyan@gmail.com
+- 🐛 Issues: https://github.com/mshjiyan-a11y/msh_med_tour/issues
+- 📖 Documentation: See docs/ folder
+
+---
+
+## 🙏 Acknowledgments
+
+- Flask framework
+- SQLAlchemy ORM
+- Bootstrap CSS framework
+- Meta Graph API
+- Community contributors
+
+---
+
+**Last Updated:** November 2025
+**Maintained by:** Jiyan - Medical Tourism Management System
+
 Comprehensive medical tourism management system with multi-module support (Hair Transplant, Dental, Eye Treatment).
 
 ## Features
