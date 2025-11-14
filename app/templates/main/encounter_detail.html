@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Muayene #{{ encounter.id }} - {{ encounter.patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3">Muayene #{{ encounter.id }}</h2>
+            <p class="text-muted">
+                Hasta: <strong>{{ encounter.patient.full_name }}</strong> | 
+                Tarih: {{ encounter.date.strftime('%d.%m.%Y %H:%M') if encounter.date else encounter.created_at.strftime('%d.%m.%Y %H:%M') }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('main.patient_detail', id=encounter.patient.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Hasta Sayfası
+            </a>
+            <a href="{{ url_for('main.edit_encounter', id=encounter.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Düzenle
+            </a>
+            <a href="{{ url_for('main.encounter_pdf', id=encounter.id) }}" class="btn btn-danger" target="_blank">
+                <i class="fas fa-file-pdf"></i> PDF İndir
+            </a>
+            <a href="{{ url_for('main.encounter_pdf_preview', id=encounter.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-eye"></i> PDF Önizleme
+            </a>
+            <a href="{{ url_for('main.export_encounter_csv', id=encounter.id) }}" class="btn btn-outline-success">
+                <i class="fas fa-file-csv"></i> CSV Dışa Aktar
+            </a>
+            <form method="POST" action="{{ url_for('main.request_approval', id=encounter.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-link"></i> Onay Linki Oluştur
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('main.encounter_email_quote', id=encounter.id) }}" class="d-inline" onsubmit="return confirm('Fiyat teklifini hastanın e-posta adresine göndermek istiyor musunuz?');">
+                <button type="submit" class="btn btn-success" {% if not encounter.patient.email %}disabled title="Hasta e-posta adresi yok"{% endif %}>
+                    <i class="fas fa-paper-plane"></i> E-Posta ile Teklif Gönder
+                </button>
+            </form>
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> Yazdır
+            </button>
+        </div>
+    </div>
+
+    <!-- General Info -->
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        Genel Bilgiler
+                        <span class="badge bg-{{ 'success' if encounter.status == 'completed' else 'warning' }} float-end">
+                            {{ encounter.status }}
+                        </span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Not:</strong> {{ encounter.note or 'Not girilmemiş' }}</p>
+                    <p class="text-muted small mb-0">
+                        Oluşturan: {{ encounter.creator.username if encounter.creator else 'Bilinmiyor' }} | 
+                        Oluşturulma: {{ encounter.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hair Module -->
+    {% if encounter.hair_patterns or encounter.hair_annotations %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-user"></i> Saç Ekimi</h5>
+                </div>
+                <div class="card-body">
+                    {% if encounter.hair_patterns %}
+                    <h6>Saç Dökülme Paterni:</h6>
+                    {% for pattern in encounter.hair_patterns %}
+                    <p>
+                        <strong>{{ pattern.pattern_key }}</strong>
+                        {% if pattern.note %}<br><small class="text-muted">{{ pattern.note }}</small>{% endif %}
+                    </p>
+                    {% endfor %}
+                    {% endif %}
+
+                    {% if encounter.hair_annotations %}
+                    <h6 class="mt-3">Değerlendirme:</h6>
+                    <ul class="list-group">
+                        {% for anno in encounter.hair_annotations %}
+                        <li class="list-group-item">
+                            <strong>{{ anno.label }}</strong>
+                            {% if anno.note %}<br><small class="text-muted">{{ anno.note }}</small>{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Dental Module -->
+    {% if encounter.dental_procedures %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-tooth"></i> Diş Tedavisi</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Diş No</th>
+                                    <th>Tedavi</th>
+                                    <th>Fiyat</th>
+                                    <th>Not</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set total_dental = namespace(value=0) %}
+                                {% for proc in encounter.dental_procedures %}
+                                <tr>
+                                    <td><strong>{{ proc.tooth_no }}</strong></td>
+                                    <td>{{ proc.treatment_type }}</td>
+                                    <td>{{ '%.2f'|format(proc.price) if proc.price else '-' }} €</td>
+                                    <td>{{ proc.note or '-' }}</td>
+                                </tr>
+                                {% set total_dental.value = total_dental.value + (proc.price or 0) %}
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-active">
+                                    <td colspan="2"><strong>Toplam</strong></td>
+                                    <td><strong>{{ '%.2f'|format(total_dental.value) }} €</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Eye Module -->
+    {% if encounter.eye_refraction or encounter.eye_treatments %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-eye"></i> Göz Ameliyatı</h5>
+                </div>
+                <div class="card-body">
+                    {% if encounter.eye_refraction %}
+                    <h6>Refraksiyon Değerleri:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th colspan="4" class="text-center bg-light">Sağ Göz (OD)</th>
+                                    </tr>
+                                    <tr>
+                                        <th>SPH</th>
+                                        <th>CYL</th>
+                                        <th>AXIS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ encounter.eye_refraction.od_sph if encounter.eye_refraction.od_sph is not none else '-' }}</td>
+                                        <td>{{ encounter.eye_refraction.od_cyl if encounter.eye_refraction.od_cyl is not none else '-' }}</td>
+                                        <td>{{ encounter.eye_refraction.od_ax if encounter.eye_refraction.od_ax is not none else '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th colspan="4" class="text-center bg-light">Sol Göz (OS)</th>
+                                    </tr>
+                                    <tr>
+                                        <th>SPH</th>
+                                        <th>CYL</th>
+                                        <th>AXIS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ encounter.eye_refraction.os_sph if encounter.eye_refraction.os_sph is not none else '-' }}</td>
+                                        <td>{{ encounter.eye_refraction.os_cyl if encounter.eye_refraction.os_cyl is not none else '-' }}</td>
+                                        <td>{{ encounter.eye_refraction.os_ax if encounter.eye_refraction.os_ax is not none else '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <p><strong>Planlanan Ameliyat:</strong> {{ encounter.eye_refraction.planned_procedure or '-' }}</p>
+                    {% endif %}
+
+                    {% if encounter.eye_treatments %}
+                    <h6 class="mt-3">Tedaviler:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Tedavi</th>
+                                    <th>Göz</th>
+                                    <th>Fiyat</th>
+                                    <th>Not</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set total_eye = namespace(value=0) %}
+                                {% for treatment in encounter.eye_treatments %}
+                                <tr>
+                                    <td>{{ treatment.title }}</td>
+                                    <td>{{ treatment.side }}</td>
+                                    <td>{{ '%.2f'|format(treatment.price) if treatment.price else '-' }} €</td>
+                                    <td>{{ treatment.note or '-' }}</td>
+                                </tr>
+                                {% set total_eye.value = total_eye.value + (treatment.price or 0) %}
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-active">
+                                    <td colspan="2"><strong>Toplam</strong></td>
+                                    <td><strong>{{ '%.2f'|format(total_eye.value) }} €</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Aesthetic Surgery Module -->
+    {% if encounter.aesthetic_procedure %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card" style="border: 2px solid #ff6b9d;">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #ff6b9d 0%, #c86dd7 100%);">
+                    <h5 class="card-title mb-0"><i class="fas fa-user-md"></i> Estetik Cerrahi</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>İşlem Türü:</strong> {{ encounter.aesthetic_procedure.procedure_type }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fiyat:</strong> {{ '%.2f'|format(encounter.aesthetic_procedure.price) if encounter.aesthetic_procedure.price else '-' }} {{ encounter.aesthetic_procedure.currency }}</p>
+                        </div>
+                    </div>
+                    {% if encounter.aesthetic_procedure.notes %}
+                    <p><strong>Notlar:</strong> {{ encounter.aesthetic_procedure.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Bariatric Surgery Module -->
+    {% if encounter.bariatric_surgery %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card" style="border: 2px solid #9b59b6;">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="card-title mb-0"><i class="fas fa-weight"></i> Bariatrik Cerrahi</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p><strong>Ameliyat Türü:</strong> {{ encounter.bariatric_surgery.surgery_type }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p><strong>Kilo:</strong> {{ encounter.bariatric_surgery.weight_kg }} kg</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p><strong>Boy:</strong> {{ encounter.bariatric_surgery.height_cm }} cm</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p><strong>BMI:</strong> <span class="badge bg-info">{{ '%.1f'|format(encounter.bariatric_surgery.bmi) if encounter.bariatric_surgery.bmi else '-' }}</span></p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Fiyat:</strong> {{ '%.2f'|format(encounter.bariatric_surgery.price) if encounter.bariatric_surgery.price else '-' }} {{ encounter.bariatric_surgery.currency }}</p>
+                        </div>
+                    </div>
+                    {% if encounter.bariatric_surgery.notes %}
+                    <p><strong>Notlar:</strong> {{ encounter.bariatric_surgery.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- IVF Treatment Module -->
+    {% if encounter.ivf_treatment %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card" style="border: 2px solid #f093fb;">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h5 class="card-title mb-0"><i class="fas fa-baby"></i> Tüp Bebek Tedavisi</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Tedavi Türü:</strong> {{ encounter.ivf_treatment.treatment_type }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p><strong>Döngü:</strong> {{ encounter.ivf_treatment.cycle_number }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p><strong>Kadın Yaş:</strong> {{ encounter.ivf_treatment.female_age if encounter.ivf_treatment.female_age else '-' }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Fiyat:</strong> {{ '%.2f'|format(encounter.ivf_treatment.price) if encounter.ivf_treatment.price else '-' }} {{ encounter.ivf_treatment.currency }}</p>
+                        </div>
+                    </div>
+                    {% if encounter.ivf_treatment.notes %}
+                    <p><strong>Notlar:</strong> {{ encounter.ivf_treatment.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Check-Up Package Module -->
+    {% if encounter.checkup_package %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card" style="border: 2px solid #4facfe;">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <h5 class="card-title mb-0"><i class="fas fa-heartbeat"></i> Check-Up Paketi</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Paket Türü:</strong> {{ encounter.checkup_package.package_type }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Testler:</strong> {{ encounter.checkup_package.tests_included if encounter.checkup_package.tests_included else '-' }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Fiyat:</strong> {{ '%.2f'|format(encounter.checkup_package.price) if encounter.checkup_package.price else '-' }} {{ encounter.checkup_package.currency }}</p>
+                        </div>
+                    </div>
+                    {% if encounter.checkup_package.notes %}
+                    <p><strong>Notlar:</strong> {{ encounter.checkup_package.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CSV Import Section -->
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-file-import"></i> CSV Veri İçe Aktarma</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Muayene verilerini CSV dosyası ile içe aktarabilirsiniz. Şablon sütunlar: module,item,quantity,price,currency,note</p>
+                    <form method="POST" action="{{ url_for('main.import_encounter_csv', id=encounter.id) }}" enctype="multipart/form-data" class="d-inline-flex">
+                        <input type="file" name="file" accept=".csv" class="form-control form-control-sm me-2" style="max-width:300px;" required />
+                        <button type="submit" class="btn btn-sm btn-info"><i class="fas fa-upload"></i> Yükle</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Log Section -->
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card border-dark">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-history"></i> Değişiklik Geçmişi</h5>
+                </div>
+                <div class="card-body" style="max-height:300px; overflow:auto;">
+                    {% if audit_logs %}
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Zaman</th>
+                                <th>Kullanıcı</th>
+                                <th>İşlem</th>
+                                <th>Varlık</th>
+                                <th>Alan</th>
+                                <th>Eski</th>
+                                <th>Yeni</th>
+                                <th>Not</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                            <tr>
+                                <td class="text-muted small">{{ log.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                                <td class="small">{{ log.user.username if log.user_id and log.user_id else '-' }}</td>
+                                <td><span class="badge bg-secondary">{{ log.action }}</span></td>
+                                <td class="small">{{ log.entity_type }}</td>
+                                <td class="small">{{ log.field or '-' }}</td>
+                                <td class="small">{{ log.old_value or '-' }}</td>
+                                <td class="small">{{ log.new_value or '-' }}</td>
+                                <td class="small">{{ log.note or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                        <p class="text-muted mb-0">Henüz değişiklik kaydı yok.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Modules Warning -->
+    {% if not (encounter.hair_patterns or encounter.hair_annotations or encounter.dental_procedures or encounter.eye_refraction or encounter.eye_treatments or encounter.aesthetic_procedure or encounter.bariatric_surgery or encounter.ivf_treatment or encounter.checkup_package) %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Bu muayene için henüz modül eklenmemiş.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

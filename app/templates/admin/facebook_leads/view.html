@@ -1,0 +1,261 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Lead - {{ lead.full_name() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>{{ lead.full_name() }}</h2>
+            <p class="text-muted">Meta Lead ID: <code>{{ lead.meta_lead_id }}</code></p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('facebook_leads.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Geri Dön
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Lead Info -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-user-circle"></i> Lead Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>İsim:</strong></div>
+                        <div class="col-sm-8">{{ lead.first_name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Soyisim:</strong></div>
+                        <div class="col-sm-8">{{ lead.last_name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Email:</strong></div>
+                        <div class="col-sm-8">
+                            {% if lead.email %}
+                            <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Telefon:</strong></div>
+                        <div class="col-sm-8">
+                            {% if lead.phone %}
+                            <a href="tel:{{ lead.phone }}">{{ lead.phone }}</a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Dağıtıcı:</strong></div>
+                        <div class="col-sm-8">{{ lead.distributor.name }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-tasks"></i> Durum</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Mevcut Durum:</strong></label>
+                        {% set status_badges = {
+                            'new': 'primary',
+                            'assigned': 'info',
+                            'contacted': 'warning',
+                            'converted': 'success',
+                            'rejected': 'danger'
+                        } %}
+                        <div>
+                            <span class="badge bg-{{ status_badges.get(lead.status, 'secondary') }} fs-6">
+                                {{ lead.status }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{{ url_for('facebook_leads.update_status', lead_id=lead.id) }}" class="mb-3">
+                        <label class="form-label"><strong>Durum Değiştir:</strong></label>
+                        <div class="input-group">
+                            <select name="status" class="form-select">
+                                <option value="">-- Durum Seç --</option>
+                                <option value="new">Yeni</option>
+                                <option value="assigned">Atanmış</option>
+                                <option value="contacted">İletişim Kuruldu</option>
+                                <option value="converted">Dönüştürülmüş</option>
+                                <option value="rejected">Reddedilmiş</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary">Güncelle</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Assignment Card -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-user-tie"></i> Atama</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Atanan Kişi:</strong></label>
+                        {% if lead.assigned_to %}
+                        <div class="badge bg-info">{{ lead.assigned_to.username }}</div>
+                        {% else %}
+                        <div class="text-muted">Henüz atanmamış</div>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" action="{{ url_for('facebook_leads.assign_lead', lead_id=lead.id) }}">
+                        <label class="form-label"><strong>Personele Atamak İçin:</strong></label>
+                        <div class="input-group">
+                            <select name="user_id" class="form-select">
+                                <option value="">-- Personel Seç --</option>
+                                {% for user in lead.distributor.users %}
+                                    <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary">Ata</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-md-6">
+            <!-- Form Data -->
+            {% if lead.form_data %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Form Verileri</h5>
+                </div>
+                <div class="card-body">
+                    {% for key, value in lead.form_data.items() %}
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>{{ key }}:</strong></div>
+                        <div class="col-sm-8">{{ value }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Timestamps -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Tarihler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Facebook'ta Oluşturulma:</strong></div>
+                        <div class="col-sm-7">
+                            {% if lead.lead_created_at %}
+                            {{ lead.lead_created_at.strftime('%d.%m.%Y %H:%M:%S') }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Sisteme Alındığı Tarih:</strong></div>
+                        <div class="col-sm-7">{{ lead.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-5"><strong>Son Güncellenme:</strong></div>
+                        <div class="col-sm-7">{{ lead.updated_at.strftime('%d.%m.%Y %H:%M:%S') }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Note -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Not Ekle</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('facebook_leads.add_note', lead_id=lead.id) }}">
+                        <div class="mb-3">
+                            <textarea name="note" class="form-control" rows="3" 
+                                    placeholder="Lead hakkında not yazınız..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Not Ekle
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactions History -->
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-history"></i> İşlem Geçmişi</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Tür</th>
+                        <th>İşlemi Yapan</th>
+                        <th>Açıklama</th>
+                        <th>Sonuç</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if interactions %}
+                        {% for interaction in interactions %}
+                        <tr>
+                            <td><small>{{ interaction.created_at.strftime('%d.%m.%Y %H:%M') }}</small></td>
+                            <td>
+                                {% set type_icons = {
+                                    'called': 'phone',
+                                    'emailed': 'envelope',
+                                    'sms': 'sms',
+                                    'note': 'sticky-note',
+                                    'status_changed': 'tasks'
+                                } %}
+                                <i class="fas fa-{{ type_icons.get(interaction.interaction_type, 'info-circle') }}"></i>
+                                {{ interaction.interaction_type }}
+                            </td>
+                            <td><small>{{ interaction.user.username }}</small></td>
+                            <td><small>{{ interaction.description }}</small></td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if interaction.result == 'success' else 'danger' }}">
+                                    {{ interaction.result }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-3">Henüz işlem yapılmamış</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Delete Button -->
+    <div class="mt-4">
+        <form method="post" action="{{ url_for('facebook_leads.delete_lead', lead_id=lead.id) }}" 
+              onsubmit="return confirm('Bu leadi silmek istediğinizden emin misiniz?');" class="d-inline">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="fas fa-trash"></i> Leadi Sil
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

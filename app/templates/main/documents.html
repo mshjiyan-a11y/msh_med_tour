@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Dokümanlar{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3><i class="fas fa-file-alt"></i> Dokümanlar</h3>
+      <a href="{{ url_for('main.upload_document') }}" class="btn btn-primary"><i class="fas fa-upload"></i> Yükle</a>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-md-3">
+            <label class="form-label small">Tür</label>
+            <select name="type" class="form-select form-select-sm">
+              <option value="">Tümü</option>
+              <option value="medical_report" {% if doc_type=='medical_report' %}selected{% endif %}>Tıbbi Rapor</option>
+              <option value="lab_result" {% if doc_type=='lab_result' %}selected{% endif %}>Lab Sonucu</option>
+              <option value="consent_form" {% if doc_type=='consent_form' %}selected{% endif %}>Onay Formu</option>
+              <option value="image" {% if doc_type=='image' %}selected{% endif %}>Görüntü</option>
+              <option value="other" {% if doc_type=='other' %}selected{% endif %}>Diğer</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Hasta Ara</label>
+            <input type="text" name="patient" class="form-control form-control-sm" placeholder="Ad/Soyad" value="{{ patient_search }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small">Arşiv</label>
+            <select name="archived" class="form-select form-select-sm">
+              <option value="0" {% if archived=='0' %}selected{% endif %}>Aktif</option>
+              <option value="1" {% if archived=='1' %}selected{% endif %}>Arşivlenmiş</option>
+            </select>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-sm btn-primary w-100">Filtrele</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- List -->
+    {% if documents.items|length == 0 %}
+      <div class="alert alert-info">Doküman bulunamadı.</div>
+    {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Başlık</th>
+              <th>Tür</th>
+              <th>Hasta</th>
+              <th>Dosya</th>
+              <th>Boyut</th>
+              <th>Yüklenme</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in documents.items %}
+              <tr>
+                <td>
+                  {{ d.title }}
+                  {% if d.is_public %}<span class="badge bg-info ms-1">Herkese Açık</span>{% endif %}
+                  {% if d.is_archived %}<span class="badge bg-secondary ms-1">Arşiv</span>{% endif %}
+                </td>
+                <td><span class="badge bg-secondary">{{ d.document_type }}</span></td>
+                <td>
+                  {% if d.patient %}
+                    <a href="{{ url_for('main.patient_detail', id=d.patient.id) }}">{{ d.patient.first_name }} {{ d.patient.last_name }}</a>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="small">
+                  {{ d.filename }}
+                  {% if d.is_image() %}<i class="fas fa-image text-primary"></i>{% endif %}
+                  {% if d.is_pdf() %}<i class="fas fa-file-pdf text-danger"></i>{% endif %}
+                </td>
+                <td class="small">{{ d.size_mb() }} MB</td>
+                <td class="small">{{ d.uploaded_at.strftime('%d.%m.%Y') }}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    {% if d.is_image() or d.is_pdf() %}
+                      <a href="{{ url_for('main.view_document', id=d.id) }}" class="btn btn-outline-primary btn-sm" target="_blank" title="Görüntüle"><i class="fas fa-eye"></i></a>
+                    {% endif %}
+                    <a href="{{ url_for('main.download_document', id=d.id) }}" class="btn btn-outline-secondary btn-sm" title="İndir"><i class="fas fa-download"></i></a>
+                    {% if d.is_archived %}
+                      <form method="post" action="{{ url_for('main.unarchive_document', id=d.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-outline-success btn-sm" title="Arşivden Çıkar"><i class="fas fa-undo"></i></button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="{{ url_for('main.archive_document', id=d.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-outline-warning btn-sm" title="Arşivle"><i class="fas fa-archive"></i></button>
+                      </form>
+                    {% endif %}
+                    {% if current_user.is_admin() %}
+                      <form method="post" action="{{ url_for('main.delete_document', id=d.id) }}" style="display:inline;" onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Sil"><i class="fas fa-trash"></i></button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <nav>
+        <ul class="pagination">
+          {% if documents.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('main.documents', page=documents.prev_num, type=doc_type, patient=patient_search, archived=archived) }}">&laquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+          {% endif %}
+          <li class="page-item disabled"><span class="page-link">{{ documents.page }}/{{ documents.pages }}</span></li>
+          {% if documents.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('main.documents', page=documents.next_num, type=doc_type, patient=patient_search, archived=archived) }}">&raquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

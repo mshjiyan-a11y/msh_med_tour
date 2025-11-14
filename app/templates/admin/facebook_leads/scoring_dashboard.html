@@ -1,0 +1,237 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Lead Skoru & Önceliklendirme{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-star"></i> Lead Kalitesi Skoru & Önceliklendirme</h2>
+            <p class="text-muted">AI tarafından puanlanan lead'leri ve yönetim önerilerini görüntüleyin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('facebook_leads.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-list"></i> Tüm Lead'ler
+            </a>
+        </div>
+    </div>
+
+    <!-- Score Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Skor Dağılımı</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2">
+                            <div class="display-6" style="color: #28a745;">
+                                {{ score_distribution.get('excellent', 0) }}
+                            </div>
+                            <small>Çok İyi (80-100)</small>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="display-6" style="color: #17a2b8;">
+                                {{ score_distribution.get('good', 0) }}
+                            </div>
+                            <small>İyi (60-79)</small>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="display-6" style="color: #ffc107;">
+                                {{ score_distribution.get('medium', 0) }}
+                            </div>
+                            <small>Orta (40-59)</small>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="display-6" style="color: #fd7e14;">
+                                {{ score_distribution.get('low', 0) }}
+                            </div>
+                            <small>Düşük (20-39)</small>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="display-6" style="color: #dc3545;">
+                                {{ score_distribution.get('very_low', 0) }}
+                            </div>
+                            <small>Çok Düşük (0-19)</small>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="display-6">
+                                {{ score_distribution.get('excellent', 0) + score_distribution.get('good', 0) + score_distribution.get('medium', 0) + score_distribution.get('low', 0) + score_distribution.get('very_low', 0) }}
+                            </div>
+                            <small>Toplam</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    {% if recommendations.high_quality_unassigned or recommendations.low_quality_contacted or recommendations.abandoned_high_quality %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Yönetim Önerileri</h5>
+                </div>
+                <div class="card-body">
+                    <!-- High Quality Unassigned -->
+                    {% if recommendations.high_quality_unassigned %}
+                    <div class="alert alert-success" role="alert">
+                        <h6><i class="fas fa-arrow-up"></i> Yüksek Kaliteli Lead'ler (Atanmamış)</h6>
+                        <p class="mb-2 text-muted">Bu lead'ler hemen atanmalıdır</p>
+                        <ul class="mb-0">
+                            {% for item in recommendations.high_quality_unassigned %}
+                            <li>
+                                <strong>{{ item.name }}</strong> (Skor: {{ item.score }}/100)
+                                <a href="{{ url_for('facebook_leads.view_lead', lead_id=item.lead_id) }}" class="btn btn-sm btn-outline-success">
+                                    Ata
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Low Quality Contacted -->
+                    {% if recommendations.low_quality_contacted %}
+                    <div class="alert alert-warning" role="alert">
+                        <h6><i class="fas fa-arrow-down"></i> Düşük Kaliteli Lead'ler (İletişim Kuruldu)</h6>
+                        <p class="mb-2 text-muted">Bu lead'ler için işlem sürüsü durdurulabilir</p>
+                        <ul class="mb-0">
+                            {% for item in recommendations.low_quality_contacted %}
+                            <li>
+                                <strong>{{ item.name }}</strong> (Skor: {{ item.score }}/100)
+                                <a href="{{ url_for('facebook_leads.view_lead', lead_id=item.lead_id) }}" class="btn btn-sm btn-outline-warning">
+                                    İncele
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Abandoned High Quality -->
+                    {% if recommendations.abandoned_high_quality %}
+                    <div class="alert alert-danger" role="alert">
+                        <h6><i class="fas fa-exclamation-circle"></i> Terk Edilmiş Yüksek Kaliteli Lead'ler</h6>
+                        <p class="mb-2 text-muted">Bu lead'ler 48 saattir işleme alınmadı</p>
+                        <ul class="mb-0">
+                            {% for item in recommendations.abandoned_high_quality %}
+                            <li>
+                                <strong>{{ item.name }}</strong> (Skor: {{ item.score }}/100, {{ item.age_hours }}h eski)
+                                <a href="{{ url_for('facebook_leads.view_lead', lead_id=item.lead_id) }}" class="btn btn-sm btn-outline-danger">
+                                    Takip Et
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Scoring Leads -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-trophy"></i> En İyi Lead'ler (Skor Sırasına Göre)</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">Sıra</th>
+                                <th>Ad Soyad</th>
+                                <th>Email / Telefon</th>
+                                <th style="width: 15%;">Skor</th>
+                                <th>Durum</th>
+                                <th style="width: 15%;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lead, score in top_leads %}
+                            <tr>
+                                <td>
+                                    <strong>
+                                        {% set rank = loop.index %}
+                                        {% if rank == 1 %}
+                                        <i class="fas fa-medal" style="color: gold;"></i>
+                                        {% elif rank == 2 %}
+                                        <i class="fas fa-medal" style="color: silver;"></i>
+                                        {% elif rank == 3 %}
+                                        <i class="fas fa-medal" style="color: #cd7f32;"></i>
+                                        {% else %}
+                                        {{ rank }}
+                                        {% endif %}
+                                    </strong>
+                                </td>
+                                <td>{{ lead.full_name() }}</td>
+                                <td>
+                                    {% if lead.email %}
+                                    <div><small><i class="fas fa-envelope"></i> {{ lead.email }}</small></div>
+                                    {% endif %}
+                                    {% if lead.phone %}
+                                    <div><small><i class="fas fa-phone"></i> {{ lead.phone }}</small></div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="width: 100%; background-color: #e9ecef; border-radius: 5px; padding: 5px;">
+                                        <div style="background-color: 
+                                            {% if score >= 80 %}#28a745{% elif score >= 60 %}#17a2b8{% elif score >= 40 %}#ffc107{% else %}#dc3545{% endif %};
+                                            width: {{ score }}%; height: 20px; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
+                                            {{ score }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% set status_badges = {
+                                        'new': 'primary',
+                                        'assigned': 'info',
+                                        'contacted': 'warning',
+                                        'converted': 'success',
+                                        'rejected': 'danger'
+                                    } %}
+                                    <span class="badge bg-{{ status_badges.get(lead.status, 'secondary') }}">
+                                        {{ lead.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('facebook_leads.view_lead', lead_id=lead.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> Detay
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scoring Info -->
+    <div class="alert alert-info mt-4" role="alert">
+        <h6><i class="fas fa-info-circle"></i> Skor Hesaplama Metodolojisi</h6>
+        <ul class="mb-0">
+            <li><strong>Kişisel Bilgi (30 puan):</strong> Email ve telefon bilgisinin tamlığı</li>
+            <li><strong>Yaşlılık (20 puan):</strong> Lead'in ne kadar yeni olduğu</li>
+            <li><strong>Hizmet İlgisi (25 puan):</strong> Form'da belirli bir hizmet seçip seçmediği</li>
+            <li><strong>Katılım (15 puan):</strong> Form alanlarının doldurulma oranı</li>
+            <li><strong>Hız (10 puan):</strong> Lead'in son 24 saatte alınıp alınmadığı</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Auto-refresh every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

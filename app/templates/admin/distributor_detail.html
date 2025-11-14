@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}{{ distributor.name }} - Distribütör Detay{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3">{{ distributor.name }}</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('admin.distributor_integration', id=distributor.id) }}" class="btn btn-info">
+                <i class="fas fa-plug"></i> Lead Entegrasyonu
+            </a>
+            <a href="{{ url_for('admin.new_distributor_user', dist_id=distributor.id) }}" class="btn btn-success">
+                <i class="fas fa-user-plus"></i> Yeni Kullanıcı Ekle
+            </a>
+            <a href="{{ url_for('admin.edit_distributor', id=distributor.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Düzenle
+            </a>
+            <a href="{{ url_for('admin.distributors') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Geri
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Distributor Info -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Distribütör Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    {% if distributor.logo_path %}
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('static', filename='uploads/' + distributor.logo_path) }}" 
+                             class="img-fluid" style="max-height: 100px;" alt="Logo">
+                    </div>
+                    {% endif %}
+                    
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">İletişim:</th>
+                            <td>{{ distributor.contact_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Telefon:</th>
+                            <td>{{ distributor.phone or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>E-posta:</th>
+                            <td>{{ distributor.email or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Adres:</th>
+                            <td>{{ distributor.address or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tema Rengi:</th>
+                            <td>
+                                <span class="badge" style="background-color: {{ distributor.color_hex }}">
+                                    {{ distributor.color_hex }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <h6 class="mt-3">Aktif Modüller:</h6>
+                    <div>
+                        {% if distributor.enable_hair %}
+                        <span class="badge bg-info"><i class="fas fa-user"></i> Saç Ekimi</span>
+                        {% endif %}
+                        {% if distributor.enable_teeth %}
+                        <span class="badge bg-primary"><i class="fas fa-tooth"></i> Diş Tedavisi</span>
+                        {% endif %}
+                        {% if distributor.enable_eye %}
+                        <span class="badge bg-success"><i class="fas fa-eye"></i> Göz Ameliyatı</span>
+                        {% endif %}
+                        {% if distributor.enable_aesthetic %}
+                        <span class="badge" style="background: linear-gradient(135deg, #ff6b9d 0%, #c86dd7 100%);"><i class="fas fa-cut"></i> Estetik</span>
+                        {% endif %}
+                        {% if distributor.enable_bariatric %}
+                        <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="fas fa-weight"></i> Bariatrik</span>
+                        {% endif %}
+                        {% if distributor.enable_ivf %}
+                        <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i class="fas fa-baby"></i> IVF</span>
+                        {% endif %}
+                        {% if distributor.enable_checkup %}
+                        <span class="badge" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i class="fas fa-heartbeat"></i> Check-Up</span>
+                        {% endif %}
+                        {% if not (distributor.enable_hair or distributor.enable_teeth or distributor.enable_eye or distributor.enable_aesthetic or distributor.enable_bariatric or distributor.enable_ivf or distributor.enable_checkup) %}
+                        <span class="text-muted">Aktif modül yok</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">İstatistikler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h3 class="text-primary">{{ users|length }}</h3>
+                            <small>Kullanıcı</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h3 class="text-success">{{ patients_count }}</h3>
+                            <small>Hasta</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h3 class="text-info">{{ encounters_count }}</h3>
+                            <small>Muayene</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h3 class="text-warning">{{ leads_count }}</h3>
+                            <small>Lead</small>
+                        </div>
+                        <div class="col-12">
+                            <h3 class="text-secondary">{{ api_keys|length }}</h3>
+                            <small>API Key</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users List -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Kullanıcılar</h5>
+                </div>
+                <div class="card-body">
+                    {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Kullanıcı Adı</th>
+                                    <th>Ad Soyad</th>
+                                    <th>E-posta</th>
+                                    <th>Telefon</th>
+                                    <th>Rol</th>
+                                    <th>Durum</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td><strong>{{ user.username }}</strong></td>
+                                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                                    <td>{{ user.email or '-' }}</td>
+                                    <td>{{ user.phone or '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' }}">
+                                            {{ user.role }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin.edit_user', id=user.id) }}" 
+                                           class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <p>Bu distribütör için henüz kullanıcı eklenmemiş.</p>
+                        <a href="{{ url_for('admin.new_distributor_user', dist_id=distributor.id) }}" 
+                           class="btn btn-success">
+                            <i class="fas fa-user-plus"></i> İlk Kullanıcıyı Ekle
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- API Keys Section -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="fas fa-key"></i> API Anahtarları</h5>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newApiKeyModal">
+                        <i class="fas fa-plus"></i> Yeni API Key
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if api_keys %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>İsim</th>
+                                    <th>API Key</th>
+                                    <th>İzinler</th>
+                                    <th>Kaynak</th>
+                                    <th>Kullanım</th>
+                                    <th>Son Kullanım</th>
+                                    <th>Durum</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key in api_keys %}
+                                <tr>
+                                    <td><strong>{{ key.key_name }}</strong></td>
+                                    <td>
+                                        <code class="small">{{ key.api_key[:20] }}...{{ key.api_key[-8:] }}</code>
+                                        <button class="btn btn-sm btn-link p-0" 
+                                                onclick="copyToClipboard('{{ key.api_key }}')" 
+                                                title="Kopyala">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        {% if key.can_create_leads %}<span class="badge bg-success">Create</span>{% endif %}
+                                        {% if key.can_read_leads %}<span class="badge bg-info">Read</span>{% endif %}
+                                    </td>
+                                    <td><code class="small">{{ key.allowed_sources or 'all' }}</code></td>
+                                    <td>{{ key.usage_count or 0 }}</td>
+                                    <td>
+                                        {% if key.last_used_at %}
+                                        {{ key.last_used_at.strftime('%d.%m.%Y %H:%M') }}
+                                        {% else %}
+                                        <span class="text-muted">Hiç</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if key.is_active %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('admin.toggle_api_key', id=key.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-{{ 'secondary' if key.is_active else 'success' }}" 
+                                                    title="{{ 'Devre Dışı Bırak' if key.is_active else 'Aktif Et' }}">
+                                                <i class="fas fa-{{ 'pause' if key.is_active else 'play' }}"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin.delete_api_key', id=key.id) }}" 
+                                              class="d-inline" 
+                                              onsubmit="return confirm('Bu API key silinecek. Emin misiniz?')">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-key fa-3x mb-3"></i>
+                        <p>Henüz API key oluşturulmamış.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newApiKeyModal">
+                            <i class="fas fa-plus"></i> İlk API Key Oluştur
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New API Key Modal -->
+<div class="modal fade" id="newApiKeyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.create_distributor_api_key', id=distributor.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key"></i> Yeni API Key Oluştur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">API Key İsmi</label>
+                        <input type="text" name="key_name" class="form-control" required 
+                               placeholder="örn: Website Form, Mobile App, CRM Integration">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İzinler</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="can_create_leads" id="can_create" checked>
+                            <label class="form-check-label" for="can_create">
+                                Lead Oluşturma (Create)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="can_read_leads" id="can_read">
+                            <label class="form-check-label" for="can_read">
+                                Lead Okuma (Read)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İzin Verilen Kaynaklar (opsiyonel)</label>
+                        <input type="text" name="allowed_sources" class="form-control" 
+                               placeholder="örn: website, mobile, facebook (virgülle ayrılmış)">
+                        <small class="text-muted">Boş bırakırsanız tüm kaynaklara izin verilir</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Oluştur
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('API key kopyalandı!');
+    });
+}
+</script>
+
+<!-- Meta API Section (yeni) -->
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fab fa-facebook"></i> Facebook Lead Ads Konfigürasyonu</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.distributor_settings', id=distributor.id) }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="meta_page_id" class="form-label">Page ID</label>
+                                    <input type="text" class="form-control" id="meta_page_id" name="meta_page_id" 
+                                           value="{{ meta_config.page_id if meta_config else '' }}" 
+                                           placeholder="123456789012345">
+                                    <small class="text-muted">Facebook sayfanızın ID'si</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="meta_form_id" class="form-label">Form ID</label>
+                                    <input type="text" class="form-control" id="meta_form_id" name="meta_form_id" 
+                                           value="{{ meta_config.form_id if meta_config else '' }}" 
+                                           placeholder="987654321098765">
+                                    <small class="text-muted">Lead Form'un ID'si</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="meta_access_token" class="form-label">Access Token</label>
+                            <input type="password" class="form-control" id="meta_access_token" name="meta_access_token" 
+                                   value="{{ meta_config.access_token if meta_config else '' }}" 
+                                   placeholder="EAABsZC4sV0gBA...">
+                            <small class="text-muted">Long-lived access token (60+ gün geçerli)</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="meta_fetch_interval" class="form-label">Sync Aralığı (dakika)</label>
+                                    <input type="number" class="form-control" id="meta_fetch_interval" name="meta_fetch_interval" 
+                                           value="{{ meta_config.fetch_interval_minutes if meta_config else 5 }}" 
+                                           min="5" max="1440" step="5">
+                                    <small class="text-muted">Lead'leri ne sıklıkta çekeceğimizi belirle</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Durum</label>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="meta_is_active" name="meta_is_active" 
+                                               {% if meta_config and meta_config.is_active %}checked{% endif %}>
+                                        <label class="form-check-label" for="meta_is_active">
+                                            <strong>Aktif (Lead'leri otomatik senkronize et)</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Kaydet
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="testConnection()">
+                                <i class="fas fa-plug"></i> Bağlantı Testi
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="syncLeads()">
+                                <i class="fas fa-sync-alt"></i> Şimdi Senkronize Et
+                            </button>
+                        </div>
+
+                        {% if meta_config and meta_config.last_fetch_time %}
+                        <hr class="my-3">
+                        <small class="text-muted">
+                            <strong>Son Senkronizasyon:</strong> {{ meta_config.last_fetch_time.strftime('%d.%m.%Y %H:%M:%S') }}
+                            {% if meta_config.last_error %}
+                            | <span class="text-danger"><strong>Hata:</strong> {{ meta_config.last_error }}</span>
+                            {% endif %}
+                        </small>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<script>
+function testConnection() {
+    if (!document.getElementById('meta_access_token').value) {
+        alert('Lütfen önce Access Token'ı girin ve kaydedin!');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("admin.test_meta_connection", distributor_id=distributor.id) }}';
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function syncLeads() {
+    if (!document.getElementById('meta_is_active').checked) {
+        alert('Lütfen önce "Aktif" seçeneğini işaretleyin!');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("admin.sync_meta_leads", distributor_id=distributor.id) }}';
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('API key kopyalandı!');
+    });
+}
+</script>

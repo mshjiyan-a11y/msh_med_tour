@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}{% if appointment %}Randevu Düzenle{% else %}Yeni Randevu{% endif %}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header">
+        <h4>{% if appointment %}Randevu Düzenle{% else %}Yeni Randevu Oluştur{% endif %}</h4>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Hasta <span class="text-danger">*</span></label>
+            <select name="patient_id" class="form-select" required {% if appointment %}disabled{% endif %}>
+              <option value="">Hasta Seçin</option>
+              {% for p in patients %}
+                <option value="{{ p.id }}" {% if appointment and appointment.patient_id == p.id %}selected{% endif %}>
+                  {{ p.first_name }} {{ p.last_name }} - {{ p.phone }}
+                </option>
+              {% endfor %}
+            </select>
+            {% if appointment %}
+              <input type="hidden" name="patient_id" value="{{ appointment.patient_id }}">
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Başlık <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" required value="{% if appointment %}{{ appointment.title }}{% endif %}">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Açıklama</label>
+            <textarea name="description" class="form-control" rows="2">{% if appointment %}{{ appointment.description }}{% endif %}</textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Randevu Tipi</label>
+              <select name="appointment_type" class="form-select">
+                <option value="consultation" {% if appointment and appointment.appointment_type=='consultation' %}selected{% endif %}>Konsültasyon</option>
+                <option value="surgery" {% if appointment and appointment.appointment_type=='surgery' %}selected{% endif %}>Ameliyat</option>
+                <option value="checkup" {% if appointment and appointment.appointment_type=='checkup' %}selected{% endif %}>Kontrol</option>
+                <option value="followup" {% if appointment and appointment.appointment_type=='followup' %}selected{% endif %}>Takip</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Durum</label>
+              <select name="status" class="form-select">
+                <option value="scheduled" {% if not appointment or appointment.status=='scheduled' %}selected{% endif %}>Planlandı</option>
+                <option value="confirmed" {% if appointment and appointment.status=='confirmed' %}selected{% endif %}>Onaylandı</option>
+                <option value="completed" {% if appointment and appointment.status=='completed' %}selected{% endif %}>Tamamlandı</option>
+                <option value="cancelled" {% if appointment and appointment.status=='cancelled' %}selected{% endif %}>İptal</option>
+                <option value="no_show" {% if appointment and appointment.status=='no_show' %}selected{% endif %}>Gelmedi</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Başlangıç Zamanı <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="start_time" class="form-control" required 
+                value="{% if appointment %}{{ appointment.start_time.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Bitiş Zamanı <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="end_time" class="form-control" required 
+                value="{% if appointment %}{{ appointment.end_time.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Doktor Adı</label>
+              <input type="text" name="doctor_name" class="form-control" value="{% if appointment %}{{ appointment.doctor_name }}{% endif %}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Oda Numarası</label>
+              <input type="text" name="room_number" class="form-control" value="{% if appointment %}{{ appointment.room_number }}{% endif %}">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Muayene ID (Opsiyonel)</label>
+            <input type="number" name="encounter_id" class="form-control" value="{% if appointment and appointment.encounter_id %}{{ appointment.encounter_id }}{% endif %}">
+            <div class="form-text">Eğer bu randevu bir muayene ile ilişkiliyse ID'sini girin.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Notlar</label>
+            <textarea name="notes" class="form-control" rows="3">{% if appointment %}{{ appointment.notes }}{% endif %}</textarea>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="{{ url_for('main.appointments_list') }}" class="btn btn-secondary">İptal</a>
+            <button type="submit" class="btn btn-primary">{% if appointment %}Güncelle{% else %}Oluştur{% endif %}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

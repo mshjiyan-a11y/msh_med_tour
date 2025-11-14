@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Mesaj Merkezi{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Hasta Listesi Sol Panel -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Hastalar</h5>
+                </div>
+                <div class="list-group list-group-flush" style="max-height: 600px; overflow-y: auto;">
+                    <a href="{{ url_for('communication.messages') }}" 
+                       class="list-group-item list-group-item-action {% if not selected_patient_id %}active{% endif %}">
+                        <i class="fas fa-inbox me-2"></i>Tüm Mesajlar
+                    </a>
+                    {% for patient in patients %}
+                    <a href="{{ url_for('communication.messages', patient_id=patient.id) }}" 
+                       class="list-group-item list-group-item-action {% if selected_patient_id == patient.id %}active{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-circle me-2"></i>
+                                {{ patient.first_name }} {{ patient.last_name }}
+                            </div>
+                            {% set unread = patient.messages|selectattr('is_read', 'equalto', False)|list|length %}
+                            {% if unread > 0 %}
+                            <span class="badge bg-danger">{{ unread }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ patient.phone or patient.email }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Mesaj Alani Sag Panel -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comments me-2"></i>
+                            {% if selected_patient_id %}
+                                {% set patient = patients|selectattr('id', 'equalto', selected_patient_id)|first %}
+                                {{ patient.first_name }} {{ patient.last_name }} ile Mesajlar
+                            {% else %}
+                                Tüm Mesajlar
+                            {% endif %}
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" style="height: 500px; overflow-y: auto;">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="mb-3 {% if message.sender_id == current_user.id %}text-end{% endif %}" 
+                             data-message-id="{{ message.id }}"
+                             {% if not message.is_read and message.sender_id != current_user.id %}data-message-unread="true"{% endif %}>
+                            <div class="d-inline-block" style="max-width: 70%;">
+                                <div class="card {% if message.sender_id == current_user.id %}bg-primary text-white{% else %}bg-light{% endif %}">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="mb-1 d-flex align-items-center gap-2">
+                                            <small class="{% if message.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}">
+                                                <i class="fas fa-user me-1"></i>
+                                                {% if message.is_bot_message %}
+                                                    🤖 Asistan
+                                                {% elif message.sender_id == current_user.id %}
+                                                    Sen
+                                                {% else %}
+                                                    {{ message.sender.username }}
+                                                {% endif %}
+                                            </small>
+                                            {% if message.is_bot_message %}
+                                            <span class="badge bg-warning text-dark" title="Otomatik yanıt">
+                                                BOT
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-1">{{ message.content }}</p>
+                                        {% if message.translated_content and message.translated_content != message.content %}
+                                        <div class="mt-2 pt-2 border-top">
+                                            <small class="{% if message.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}">
+                                                <i class="fas fa-language me-1"></i>Çeviri ({{ message.target_language|upper }}):
+                                            </small>
+                                            <p class="mb-1 fst-italic">{{ message.translated_content }}</p>
+                                        </div>
+                                        {% endif %}
+                                        <small class="{% if message.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ message.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                            {% if message.detected_language %}
+                                            <span class="badge bg-secondary ms-1" title="Tespit edilen dil">{{ message.detected_language|upper }}</span>
+                                            {% endif %}
+                                            {% if not message.is_read and message.sender_id != current_user.id %}
+                                            <i class="fas fa-circle text-danger ms-2 unread-badge" title="Okunmadı"></i>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-comments fa-3x mb-3"></i>
+                            <p>Henüz mesaj bulunmuyor</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if selected_patient_id %}
+                <div class="card-footer">
+                    <form method="POST" action="{{ url_for('communication.send_message') }}">
+                        <input type="hidden" name="patient_id" value="{{ selected_patient_id }}">
+                        <div class="input-group">
+                            <input type="text" name="content" class="form-control" 
+                                   placeholder="Mesajınızı yazın..." required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Gönder
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Quick Actions -->
+            {% if selected_patient_id %}
+            {% set patient = patients|selectattr('id', 'equalto', selected_patient_id)|first %}
+            <div class="mt-3">
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('communication.whatsapp_link', patient_id=patient.id) }}" 
+                       class="btn btn-success" target="_blank">
+                        <i class="fab fa-whatsapp me-1"></i>WhatsApp'ta Aç
+                    </a>
+                    <a href="tel:{{ patient.phone }}" class="btn btn-outline-primary">
+                        <i class="fas fa-phone me-1"></i>Ara
+                    </a>
+                    <a href="mailto:{{ patient.email }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-envelope me-1"></i>Email Gönder
+                    </a>
+                    <a href="{{ url_for('main.patient_detail', id=patient.id) }}" 
+                       class="btn btn-outline-info">
+                        <i class="fas fa-user me-1"></i>Hasta Detayı
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto scroll to bottom
+window.addEventListener('load', function() {
+    const chatBody = document.querySelector('.card-body');
+    if (chatBody) {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+});
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-vYYbZQzQpV+5GQxDB5WF9fFJwQZLqmZWcVdSfa8jD8J1HnQqYkvHtlNnp4nKQy1N" crossorigin="anonymous"></script>
+<script>
+// Real-time messaging
+const socket = io();
+<div id="chatMeta" data-current-user-id="{{ current_user.id }}" data-selected-patient-id="{{ selected_patient_id or '' }}"></div>
+// Meta retrieval without direct Jinja in JS
+const metaEl = document.getElementById('chatMeta');
+const CURRENT_USER_ID = parseInt(metaEl.dataset.currentUserId);
+const patientId = metaEl.dataset.selectedPatientId ? parseInt(metaEl.dataset.selectedPatientId) : null;
+
+if (patientId) {
+        socket.emit('join_patient_room', {patient_id: patientId});
+}
+
+socket.on('new_message', function(data) {
+        // Filter: if viewing all, show; if viewing specific patient, ensure match
+        if (patientId && data.patient_id !== patientId) return;
+        const chatBody = document.querySelector('.card-body');
+        if (!chatBody) return;
+
+        // Build message bubble
+        const wrapper = document.createElement('div');
+    wrapper.className = 'mb-3 ' + (data.sender_id === CURRENT_USER_ID ? 'text-end' : '');
+        wrapper.setAttribute('data-message-id', data.id);
+        wrapper.innerHTML = `
+            <div class="d-inline-block" style="max-width:70%;">
+                <div class="card ${data.sender_id === CURRENT_USER_ID ? 'bg-primary text-white' : 'bg-light'}">
+                    <div class="card-body py-2 px-3">
+                        <div class="mb-1 d-flex align-items-center gap-2">
+                            <small class="${data.sender_id === CURRENT_USER_ID ? 'text-white-50' : 'text-muted'}">
+                                <i class="fas fa-user me-1"></i>
+                                ${data.is_bot ? '🤖 Asistan' : (data.sender_id === CURRENT_USER_ID ? 'Sen' : (data.sender_username || 'Kullanıcı'))}
+                            </small>
+                            ${data.is_bot ? '<span class="badge bg-warning text-dark" title="Otomatik yanıt">BOT</span>' : ''}
+                        </div>
+                        <p class="mb-1">${data.content}</p>
+                        ${data.translated_content && data.translated_content !== data.content ? `
+                        <div class="mt-2 pt-2 border-top">
+                            <small class="${data.sender_id === CURRENT_USER_ID ? 'text-white-50' : 'text-muted'}">
+                                <i class="fas fa-language me-1"></i>Çeviri (${data.target_language ? data.target_language.toUpperCase() : ''}):
+                            </small>
+                            <p class="mb-1 fst-italic">${data.translated_content}</p>
+                        </div>
+                        ` : ''}
+                        <small class="${data.sender_id === CURRENT_USER_ID ? 'text-white-50' : 'text-muted'}">
+                            <i class="fas fa-clock me-1"></i>${data.created_at}
+                            ${data.detected_language ? `<span class="badge bg-secondary ms-1" title="Tespit edilen dil">${data.detected_language.toUpperCase()}</span>` : ''}
+                        </small>
+                    </div>
+                </div>
+            </div>`;
+        chatBody.appendChild(wrapper);
+        chatBody.scrollTop = chatBody.scrollHeight;
+});
+
+// Typing indicator (future)
+let typingTimeout;
+const inputField = document.querySelector('input[name="content"]');
+if (inputField && patientId) {
+    inputField.addEventListener('input', () => {
+        socket.emit('typing', {patient_id: patientId});
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => socket.emit('stop_typing', {patient_id: patientId}), 1200);
+    });
+}
+
+socket.on('typing', (data) => {
+    if (!patientId || data.patient_id !== patientId) return;
+    let indicator = document.getElementById('typingIndicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'typingIndicator';
+        indicator.className = 'text-muted small ps-2';
+        indicator.textContent = 'Yazıyor...';
+        const footer = document.querySelector('.card-footer');
+        if (footer) footer.appendChild(indicator);
+    }
+    indicator.style.display = 'block';
+});
+
+socket.on('stop_typing', (data) => {
+  if (!patientId || data.patient_id !== patientId) return;
+  const indicator = document.getElementById('typingIndicator');
+  if (indicator) indicator.style.display = 'none';
+});
+
+// Mark message as read when scrolled into view (IntersectionObserver)
+const observeUnreadMessages = () => {
+  const unreadMessages = document.querySelectorAll('[data-message-unread="true"]');
+  if (!unreadMessages.length) return;
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+        const msgId = entry.target.dataset.messageId;
+        if (msgId && patientId) {
+          socket.emit('mark_read', {message_id: parseInt(msgId), patient_id: patientId});
+          entry.target.removeAttribute('data-message-unread');
+          observer.unobserve(entry.target);
+        }
+      }
+    });
+  }, {threshold: 0.5});
+  
+  unreadMessages.forEach(msg => observer.observe(msg));
+};
+
+// Listen for read receipts
+socket.on('message_read', (data) => {
+  if (!patientId || data.patient_id !== patientId) return;
+  const msgElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+  if (msgElement) {
+    const unreadBadge = msgElement.querySelector('.unread-badge');
+    if (unreadBadge) unreadBadge.remove();
+  }
+});
+
+// Initialize observer after messages loaded
+window.addEventListener('load', () => {
+  setTimeout(observeUnreadMessages, 500);
+});
+</script>
+{% endblock %}

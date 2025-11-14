@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Randevular{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3><i class="fas fa-calendar-alt"></i> Randevular</h3>
+      <div class="btn-group">
+        <a href="{{ url_for('main.appointments_calendar', view='month') }}" class="btn btn-outline-primary btn-sm">
+          <i class="fas fa-calendar"></i> Takvim
+        </a>
+        <a href="{{ url_for('main.appointments_list') }}" class="btn btn-outline-primary btn-sm active">
+          <i class="fas fa-list"></i> Liste
+        </a>
+        <a href="{{ url_for('main.new_appointment') }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus"></i> Yeni Randevu
+        </a>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-md-3">
+            <label class="form-label small">Durum</label>
+            <select name="status" class="form-select form-select-sm">
+              <option value="">Tümü</option>
+              <option value="scheduled" {% if status=='scheduled' %}selected{% endif %}>Planlandı</option>
+              <option value="confirmed" {% if status=='confirmed' %}selected{% endif %}>Onaylandı</option>
+              <option value="completed" {% if status=='completed' %}selected{% endif %}>Tamamlandı</option>
+              <option value="cancelled" {% if status=='cancelled' %}selected{% endif %}>İptal</option>
+              <option value="no_show" {% if status=='no_show' %}selected{% endif %}>Gelmedi</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Hasta Ara</label>
+            <input type="text" name="patient" class="form-control form-control-sm" placeholder="Ad/Soyad" value="{{ patient_search }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small">Başlangıç</label>
+            <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small">Bitiş</label>
+            <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-sm btn-primary w-100">Filtrele</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    {% if current_user.is_admin() %}
+    <form method="post" action="{{ url_for('main.send_appointment_reminders') }}" class="mb-3">
+      <button class="btn btn-sm btn-outline-info"><i class="fas fa-bell"></i> Hatırlatma Gönder (24 saat içi)</button>
+    </form>
+    {% endif %}
+
+    <!-- List -->
+    {% if appointments.items|length == 0 %}
+      <div class="alert alert-info">Randevu bulunamadı.</div>
+    {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Tarih/Saat</th>
+              <th>Hasta</th>
+              <th>Başlık</th>
+              <th>Tür</th>
+              <th>Doktor</th>
+              <th>Oda</th>
+              <th>Durum</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in appointments.items %}
+              <tr class="{% if a.is_past() and a.status == 'scheduled' %}table-warning{% endif %}">
+                <td class="small">{{ a.start_time.strftime('%d.%m.%Y %H:%M') }}<br><span class="text-muted">{{ a.duration_minutes() }} dk</span></td>
+                <td><a href="{{ url_for('main.patient_detail', id=a.patient.id) }}">{{ a.patient.first_name }} {{ a.patient.last_name }}</a></td>
+                <td>{{ a.title }}</td>
+                <td><span class="badge bg-secondary">{{ a.appointment_type }}</span></td>
+                <td>{{ a.doctor_name or '-' }}</td>
+                <td>{{ a.room_number or '-' }}</td>
+                <td>
+                  {% if a.status == 'scheduled' %}
+                    <span class="badge bg-primary">Planlandı</span>
+                  {% elif a.status == 'confirmed' %}
+                    <span class="badge bg-success">Onaylandı</span>
+                  {% elif a.status == 'completed' %}
+                    <span class="badge bg-info">Tamamlandı</span>
+                  {% elif a.status == 'cancelled' %}
+                    <span class="badge bg-danger">İptal</span>
+                  {% elif a.status == 'no_show' %}
+                    <span class="badge bg-warning">Gelmedi</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="{{ url_for('main.edit_appointment', id=a.id) }}" class="btn btn-outline-secondary btn-sm" title="Düzenle"><i class="fas fa-edit"></i></a>
+                    {% if a.status not in ('cancelled', 'completed') %}
+                      <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal{{ a.id }}" title="İptal"><i class="fas fa-ban"></i></button>
+                    {% endif %}
+                    {% if current_user.is_admin() %}
+                      <form method="post" action="{{ url_for('main.delete_appointment', id=a.id) }}" style="display:inline;" onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Sil"><i class="fas fa-trash"></i></button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Cancel Modal -->
+              <div class="modal fade" id="cancelModal{{ a.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <form method="post" action="{{ url_for('main.cancel_appointment', id=a.id) }}">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Randevu İptal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p>{{ a.title }} randevusunu iptal etmek istediğinize emin misiniz?</p>
+                        <label class="form-label">İptal Nedeni</label>
+                        <textarea name="reason" class="form-control" rows="2"></textarea>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                        <button type="submit" class="btn btn-warning">İptal Et</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <nav>
+        <ul class="pagination">
+          {% if appointments.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('main.appointments_list', page=appointments.prev_num, status=status, patient=patient_search, date_from=date_from, date_to=date_to) }}">&laquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+          {% endif %}
+          <li class="page-item disabled"><span class="page-link">{{ appointments.page }}/{{ appointments.pages }}</span></li>
+          {% if appointments.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('main.appointments_list', page=appointments.next_num, status=status, patient=patient_search, date_from=date_from, date_to=date_to) }}">&raquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Distribütörler - Yönetim{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3">Distribütörler</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('admin.new_distributor') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Yeni Distribütör
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Logo</th>
+                            <th>İsim</th>
+                            <th>İletişim</th>
+                            <th>Telefon</th>
+                            <th>E-posta</th>
+                            <th>Modüller</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dist in distributors %}
+                        <tr>
+                            <td>{{ dist.id }}</td>
+                            <td>
+                                {% if dist.logo_path %}
+                                <img src="{{ url_for('static', filename='uploads/' + dist.logo_path) }}" 
+                                     height="30" alt="Logo">
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ dist.name }}</strong></td>
+                            <td>{{ dist.contact_name or '-' }}</td>
+                            <td>{{ dist.phone or '-' }}</td>
+                            <td>{{ dist.email or '-' }}</td>
+                            <td>
+                                {% if dist.enable_hair %}<span class="badge bg-info me-1 mb-1">Saç</span>{% endif %}
+                                {% if dist.enable_teeth %}<span class="badge bg-primary me-1 mb-1">Diş</span>{% endif %}
+                                {% if dist.enable_eye %}<span class="badge bg-success me-1 mb-1">Göz</span>{% endif %}
+                                {% if dist.enable_aesthetic %}<span class="badge bg-warning me-1 mb-1">Estetik</span>{% endif %}
+                                {% if dist.enable_bariatric %}<span class="badge bg-danger me-1 mb-1">Bariatrik</span>{% endif %}
+                                {% if dist.enable_ivf %}<span class="badge bg-purple me-1 mb-1">IVF</span>{% endif %}
+                                {% if dist.enable_checkup %}<span class="badge bg-secondary me-1 mb-1">Check-up</span>{% endif %}
+                                {% if not (dist.enable_hair or dist.enable_teeth or dist.enable_eye or dist.enable_aesthetic or dist.enable_bariatric or dist.enable_ivf or dist.enable_checkup) %}
+                                <span class="text-muted">Hiçbiri</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin.view_distributor', id=dist.id) }}" 
+                                   class="btn btn-sm btn-info me-1" title="Detay">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('admin.edit_distributor', id=dist.id) }}" 
+                                   class="btn btn-sm btn-warning" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

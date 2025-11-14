@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Destek Talepleri{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-life-ring me-2"></i>Destek Talepleri</h2>
+        <a href="{{ url_for('communication.new_ticket') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Yeni Talep
+        </a>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="open" {% if request.args.get('status') == 'open' %}selected{% endif %}>Açık</option>
+                        <option value="in_progress" {% if request.args.get('status') == 'in_progress' %}selected{% endif %}>İşlemde</option>
+                        <option value="waiting_patient" {% if request.args.get('status') == 'waiting_patient' %}selected{% endif %}>Hasta Bekliyor</option>
+                        <option value="resolved" {% if request.args.get('status') == 'resolved' %}selected{% endif %}>Çözüldü</option>
+                        <option value="closed" {% if request.args.get('status') == 'closed' %}selected{% endif %}>Kapatıldı</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="priority" class="form-select">
+                        <option value="">Tüm Öncelikler</option>
+                        <option value="urgent" {% if request.args.get('priority') == 'urgent' %}selected{% endif %}>Acil</option>
+                        <option value="high" {% if request.args.get('priority') == 'high' %}selected{% endif %}>Yüksek</option>
+                        <option value="medium" {% if request.args.get('priority') == 'medium' %}selected{% endif %}>Orta</option>
+                        <option value="low" {% if request.args.get('priority') == 'low' %}selected{% endif %}>Düşük</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Filtrele
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tickets Tablosu -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Ticket #</th>
+                            <th>Hasta</th>
+                            <th>Konu</th>
+                            <th>Kategori</th>
+                            <th>Öncelik</th>
+                            <th>Durum</th>
+                            <th>Atanan</th>
+                            <th>Oluşturulma</th>
+                            <th>SLA</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('communication.ticket_detail', id=ticket.id) }}">
+                                    <strong>{{ ticket.ticket_number }}</strong>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.patient_detail', id=ticket.patient_id) }}">
+                                    {{ ticket.patient.first_name }} {{ ticket.patient.last_name }}
+                                </a>
+                            </td>
+                            <td>{{ ticket.subject }}</td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {% if ticket.category == 'medical' %}Tıbbi
+                                    {% elif ticket.category == 'logistics' %}Lojistik
+                                    {% elif ticket.category == 'payment' %}Ödeme
+                                    {% elif ticket.category == 'complaint' %}Şikayet
+                                    {% else %}Soru
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'danger' if ticket.priority == 'urgent' 
+                                    else 'warning' if ticket.priority == 'high'
+                                    else 'info' if ticket.priority == 'medium'
+                                    else 'secondary' }}">
+                                    {% if ticket.priority == 'urgent' %}Acil
+                                    {% elif ticket.priority == 'high' %}Yüksek
+                                    {% elif ticket.priority == 'medium' %}Orta
+                                    {% else %}Düşük
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'success' if ticket.status == 'resolved' 
+                                    else 'primary' if ticket.status == 'in_progress'
+                                    else 'warning' if ticket.status == 'waiting_patient'
+                                    else 'danger' if ticket.status == 'open'
+                                    else 'secondary' }}">
+                                    {% if ticket.status == 'open' %}Açık
+                                    {% elif ticket.status == 'in_progress' %}İşlemde
+                                    {% elif ticket.status == 'waiting_patient' %}Hasta Bekliyor
+                                    {% elif ticket.status == 'resolved' %}Çözüldü
+                                    {% else %}Kapatıldı
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if ticket.assigned_user %}
+                                    <i class="fas fa-user-check me-1"></i>{{ ticket.assigned_user.username }}
+                                {% else %}
+                                    <span class="text-muted">Atanmadı</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ ticket.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </td>
+                            <td>
+                                {% if ticket.due_date %}
+                                    {% set now = datetime.utcnow() %}
+                                    {% set diff = (ticket.due_date - now).total_seconds() / 3600 %}
+                                    {% if diff < 0 %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle"></i>Gecikmiş
+                                        </span>
+                                    {% elif diff < 4 %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock"></i>{{ diff|int }}s
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i>Zamanında
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('communication.ticket_detail', id=ticket.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if not tickets %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-ticket-alt fa-3x mb-3"></i>
+                <p>Henüz destek talebi bulunmuyor</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

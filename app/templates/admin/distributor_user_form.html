@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Yeni Kullanıcı - {{ distributor.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <strong>{{ distributor.name }}</strong> için Yeni Kullanıcı
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Bu kullanıcı <strong>{{ distributor.name }}</strong> distribütörüne bağlı olacak.
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Kullanıcı Adı *</label>
+                                <input type="text" name="username" class="form-control" required 
+                                       placeholder="Örn: ahmet.yilmaz">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">E-posta</label>
+                                <input type="email" name="email" class="form-control" 
+                                       placeholder="ornek@email.com">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ad *</label>
+                                <input type="text" name="first_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Soyad *</label>
+                                <input type="text" name="last_name" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Telefon</label>
+                            <input type="text" name="phone" class="form-control" 
+                                   placeholder="+90 555 123 4567">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Rol *</label>
+                            <select name="role" class="form-control" required>
+                                <option value="staff">Personel (Standart Kullanıcı)</option>
+                                <option value="doctor">Doktor</option>
+                                <option value="distributor">Distribütör Yöneticisi</option>
+                            </select>
+                            <small class="text-muted">
+                                <strong>Personel:</strong> Hasta ekleyebilir, muayene kaydı oluşturabilir<br>
+                                <strong>Doktor:</strong> Personel yetkileri + raporlama<br>
+                                <strong>Distribütör Yöneticisi:</strong> Tüm yetkiler (kendi distribütörü için)
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Şifre *</label>
+                            <input type="password" name="password" class="form-control" required 
+                                   minlength="6" placeholder="En az 6 karakter">
+                            <small class="text-muted">Kullanıcı daha sonra şifresini profil sayfasından değiştirebilir.</small>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.view_distributor', id=distributor.id) }}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-times"></i> İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus"></i> Kullanıcı Oluştur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

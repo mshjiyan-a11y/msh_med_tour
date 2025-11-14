@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Facebook Lead Ads - Yönetim Paneli{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fab fa-facebook"></i> Facebook Leads Yönetimi</h2>
+            <p class="text-muted">Meta/Facebook Lead Ads'den gelen canlı leadler</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="#syncModal" class="btn btn-primary" data-bs-toggle="modal">
+                <i class="fas fa-sync"></i> Leadleri Senkronize Et
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Toplam Leadler</h6>
+                            <h3 class="mb-0">{{ status_counts.new + status_counts.assigned + status_counts.contacted + status_counts.converted + status_counts.rejected }}</h3>
+                        </div>
+                        <i class="fas fa-chart-pie fa-3x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Yeni</h6>
+                            <h3 class="mb-0 text-info">{{ status_counts.new }}</h3>
+                        </div>
+                        <i class="fas fa-star fa-3x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">İletişim Kuruldu</h6>
+                            <h3 class="mb-0 text-warning">{{ status_counts.contacted }}</h3>
+                        </div>
+                        <i class="fas fa-phone fa-3x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Dönüştürülmüş</h6>
+                            <h3 class="mb-0 text-success">{{ status_counts.converted }}</h3>
+                        </div>
+                        <i class="fas fa-check fa-3x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="distributor" class="form-label">Dağıtıcı</label>
+                    <select name="distributor" id="distributor" class="form-select">
+                        <option value="all">Tümü</option>
+                        {% for config in meta_configs %}
+                        <option value="{{ config.distributor_id }}" {% if current_distributor|string == config.distributor_id|string %}selected{% endif %}>
+                            {{ config.distributor.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Durum</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="all">Tümü</option>
+                        <option value="new" {% if current_status == 'new' %}selected{% endif %}>Yeni</option>
+                        <option value="assigned" {% if current_status == 'assigned' %}selected{% endif %}>Atanmış</option>
+                        <option value="contacted" {% if current_status == 'contacted' %}selected{% endif %}>İletişim Kuruldu</option>
+                        <option value="converted" {% if current_status == 'converted' %}selected{% endif %}>Dönüştürülmüş</option>
+                        <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>Reddedilmiş</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Ara (Ad/Email/Telefon)</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Ara..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search"></i> Filtrele
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leads Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ad Soyad</th>
+                        <th>İletişim</th>
+                        <th>Dağıtıcı</th>
+                        <th>Durum</th>
+                        <th>Atanan Kişi</th>
+                        <th>Alındığı Tarih</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if leads_page.items %}
+                        {% for lead in leads_page.items %}
+                        <tr>
+                            <td>
+                                <strong>{{ lead.full_name() }}</strong>
+                            </td>
+                            <td>
+                                {% if lead.email %}
+                                <div><i class="fas fa-envelope"></i> {{ lead.email }}</div>
+                                {% endif %}
+                                {% if lead.phone %}
+                                <div><i class="fas fa-phone"></i> {{ lead.phone }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="badge bg-secondary">{{ lead.distributor.name }}</small>
+                            </td>
+                            <td>
+                                {% set status_badges = {
+                                    'new': 'primary',
+                                    'assigned': 'info',
+                                    'contacted': 'warning',
+                                    'converted': 'success',
+                                    'rejected': 'danger'
+                                } %}
+                                <span class="badge bg-{{ status_badges.get(lead.status, 'secondary') }}">
+                                    {{ lead.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if lead.assigned_to %}
+                                    <small>{{ lead.assigned_to.username }}</small>
+                                {% else %}
+                                    <small class="text-muted">-</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ lead.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </td>
+                            <td>
+                                <a href="javascript:void(0)" class="btn btn-sm btn-primary" onclick="alert('Soon')">
+                                    <i class="fas fa-eye"></i> Görüntüle
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-2x opacity-50"></i>
+                            <p class="mt-2">Lead bulunamadı</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if leads_page.pages > 1 %}
+        <nav class="d-flex justify-content-center p-3">
+            <ul class="pagination">
+                {% if leads_page.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('facebook_leads.index', 
+                        page=leads_page.prev_num, status=current_status, 
+                        distributor=current_distributor, search=search_query) }}">
+                        Önceki
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in leads_page.iter_pages() %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == leads_page.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('facebook_leads.index', 
+                            page=page_num, status=current_status, 
+                            distributor=current_distributor, search=search_query) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if leads_page.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('facebook_leads.index', 
+                        page=leads_page.next_num, status=current_status, 
+                        distributor=current_distributor, search=search_query) }}">
+                        Sonraki
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Sync Modal -->
+<div class="modal fade" id="syncModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Leadleri Senkronize Et</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tüm aktif Meta konfigurasyonlarından leadleri çek ve veritabanına kaydet.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Bu işlem tüm bağlı dağıtıcılardan yeni leadleri getirecektir.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="alert('Sync all distributors feature - coming soon')">
+                    <i class="fas fa-sync"></i> Senkronize Et
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// TODO: Implement real-time stats update
+</script>
+{% endblock %}

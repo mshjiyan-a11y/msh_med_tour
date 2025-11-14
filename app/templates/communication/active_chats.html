@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Aktif Chat Oturumları{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-comments me-2"></i>Aktif Chat Oturumları</h2>
+        <button class="btn btn-outline-primary" onclick="window.location.reload()">
+            <i class="fas fa-sync-alt me-2"></i>Yenile
+        </button>
+    </div>
+
+    {% if sessions %}
+    <div class="row">
+        {% for session in sessions %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-circle text-success me-2"></i>
+                            Session #{{ session.session_id[:8] }}
+                        </h6>
+                        <span class="badge bg-light text-dark">
+                            {{ session.status|upper }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if session.patient %}
+                    <div class="mb-3">
+                        <strong><i class="fas fa-user me-2"></i>Hasta:</strong><br>
+                        <a href="{{ url_for('main.patient_detail', id=session.patient_id) }}">
+                            {{ session.patient.first_name }} {{ session.patient.last_name }}
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="mb-3 text-muted">
+                        <i class="fas fa-user-circle me-2"></i>Misafir Ziyaretçi
+                    </div>
+                    {% endif %}
+                    
+                    {% if session.agent %}
+                    <div class="mb-3">
+                        <strong><i class="fas fa-user-tie me-2"></i>Agent:</strong><br>
+                        {{ session.agent.username }}
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Atanmadı
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-2"></i>Başlangıç:
+                        </small><br>
+                        <small>{{ session.started_at.strftime('%d.%m.%Y %H:%M:%S') }}</small>
+                    </div>
+                    
+                    {% if session.duration_seconds %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="fas fa-hourglass-half me-2"></i>Süre:
+                        </small><br>
+                        <small>{{ (session.duration_seconds // 60)|int }} dakika {{ session.duration_seconds % 60 }} saniye</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if session.visitor_ip %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="fas fa-map-marker-alt me-2"></i>Konum:
+                        </small><br>
+                        <small>
+                            {{ session.visitor_country or 'Bilinmiyor' }}
+                            <span class="text-muted">({{ session.visitor_ip }})</span>
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-sm btn-primary" disabled>
+                            <i class="fas fa-comments me-1"></i>Chat'e Katıl
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" disabled>
+                            <i class="fas fa-times me-1"></i>Sonlandır
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Chat widget henüz entegre edilmemiş
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Aktif Chat Oturumu Bulunmuyor</h5>
+            <p class="text-muted">
+                Henüz devam eden bir chat oturumu yok.
+            </p>
+            <div class="alert alert-info mt-4">
+                <h6><i class="fas fa-lightbulb me-2"></i>Chat Widget Entegrasyonu</h6>
+                <p class="mb-0">
+                    Websitesine chat widget eklemek için:
+                    <br>• Tawk.to, Intercom veya Zendesk Chat gibi servisler kullanılabilir
+                    <br>• Özel chat widget geliştirilebilir (Socket.IO/WebSocket)
+                    <br>• WhatsApp Business API entegrasyonu yapılabilir
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Chat İstatistikleri -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ sessions|length }}</h3>
+                    <p class="text-muted mb-0">Aktif Oturum</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-success">
+                        {{ sessions|selectattr('agent_id', 'none')|list|length }}
+                    </h3>
+                    <p class="text-muted mb-0">Bekleyen</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-info">
+                        {{ sessions|selectattr('agent_id', 'defined')|list|length }}
+                    </h3>
+                    <p class="text-muted mb-0">Devam Eden</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">0</h3>
+                    <p class="text-muted mb-0">Müsait Agent</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto refresh every 30 seconds
+setTimeout(function() {
+    window.location.reload();
+}, 30000);
+</script>
+{% endblock %}

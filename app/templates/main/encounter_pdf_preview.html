@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}PDF Önizleme - Muayene #{{ encounter.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">PDF Önizleme: Muayene #{{ encounter.id }} - {{ encounter.patient.full_name }}</h2>
+    <div>
+      <a href="{{ url_for('main.encounter_detail', id=encounter.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Geri
+      </a>
+      <a href="{{ url_for('main.encounter_pdf', id=encounter.id) }}" class="btn btn-danger" target="_blank">
+        <i class="fas fa-file-pdf"></i> PDF İndir
+      </a>
+    </div>
+  </div>
+  <div class="ratio ratio-1x1" style="min-height:80vh;">
+    <iframe src="{{ pdf_url }}" style="width:100%; height:100%; border:1px solid #ddd; border-radius:6px;" title="PDF Preview"></iframe>
+  </div>
+</div>
+{% endblock %}

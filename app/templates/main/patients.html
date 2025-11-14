@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Hastalar - MSH Med Tour{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3">Hastalar</h2>
+            <p class="text-muted">Tüm hastalarınızı görüntüleyin ve yönetin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('main.export_patients', search=search or '') }}" class="btn btn-success me-2">
+                <i class="fas fa-file-excel"></i> Excel İndir
+            </a>
+            <a href="{{ url_for('main.new_patient') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Yeni Hasta
+            </a>
+        </div>
+    </div>
+
+    <!-- Help Info -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-light border">
+                <small>
+                    <i class="fas fa-lightbulb text-warning"></i> 
+                    <strong>İpucu:</strong> Hasta adına tıklayarak detay sayfasına gidin. Orada muayene ekleyebilir ve geçmiş kayıtları görebilirsiniz.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Box -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('main.patients') }}" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="fas fa-search"></i> Genel Arama</label>
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Ad, soyad, telefon, email, pasaport..." 
+                               value="{{ search or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="fas fa-flag"></i> Uyruk</label>
+                        <select name="nationality" class="form-select">
+                            <option value="">Tümü</option>
+                            {% for n in nationalities %}
+                            <option value="{{ n }}" {% if nationality == n %}selected{% endif %}>{{ n }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="fas fa-venus-mars"></i> Cinsiyet</label>
+                        <select name="gender" class="form-select">
+                            <option value="">Tümü</option>
+                            <option value="M" {% if gender == 'M' %}selected{% endif %}>Erkek</option>
+                            <option value="F" {% if gender == 'F' %}selected{% endif %}>Kadın</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="fas fa-calendar"></i> Başlangıç</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ date_from or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="fas fa-calendar"></i> Bitiş</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ date_to or '' }}">
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filtrele
+                        </button>
+                        <a href="{{ url_for('main.patients') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Temizle
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Info -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <small class="text-muted">
+                Toplam <strong>{{ patients.total }}</strong> hasta bulundu
+                {% if search or nationality or gender or date_from or date_to %}
+                <span class="badge bg-info ms-2">Filtrelendi</span>
+                {% endif %}
+            </small>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="patientsTable">
+                    <thead>
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>Telefon</th>
+                            <th>E-posta</th>
+                            <th>Doğum Tarihi</th>
+                            <th>Ülke</th>
+                            <th>Son Muayene</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients.items %}
+                        <tr>
+                            <td>{{ patient.full_name }}</td>
+                            <td>{{ patient.phone }}</td>
+                            <td>{{ patient.email }}</td>
+                            <td>{{ patient.dob.strftime('%d.%m.%Y') if patient.dob }}</td>
+                            <td>{{ patient.nationality }}</td>
+                            <td>
+                                {% set last_encounter = patient.encounters|sort(attribute='date', reverse=true)|first %}
+                                {% if last_encounter %}
+                                    {{ last_encounter.date.strftime('%d.%m.%Y') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.patient_detail', id=patient.id) }}" class="btn btn-sm btn-info" title="Hasta Detayı">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('main.edit_patient', id=patient.id) }}" class="btn btn-sm btn-warning" title="Hasta Bilgilerini Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('main.new_encounter', patient_id=patient.id) }}" class="btn btn-sm btn-success" title="Yeni Muayene">
+                                    <i class="fas fa-stethoscope"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Pagination #}
+            {% if patients.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% for page in range(1, patients.pages + 1) %}
+                    <li class="page-item {{ 'active' if page == patients.page else '' }}">
+                        <a class="page-link" href="{{ url_for('main.patients', page=page) }}">{{ page }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#patientsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Turkish.json"
+            }
+        });
+    });
+</script>
+{% endblock %}

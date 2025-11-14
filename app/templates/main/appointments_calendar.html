@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}Randevu Takvimi{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3><i class="fas fa-calendar-alt"></i> Randevu Takvimi</h3>
+      <div class="btn-group">
+        <a href="{{ url_for('main.appointments_calendar', view='month', year=year, month=month) }}" class="btn btn-outline-primary btn-sm {% if view=='month' %}active{% endif %}">
+          Aylık
+        </a>
+        <a href="{{ url_for('main.appointments_calendar', view='week') }}" class="btn btn-outline-primary btn-sm {% if view=='week' %}active{% endif %}">
+          Haftalık
+        </a>
+        <a href="{{ url_for('main.appointments_list') }}" class="btn btn-outline-primary btn-sm">
+          <i class="fas fa-list"></i> Liste
+        </a>
+        <a href="{{ url_for('main.new_appointment') }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus"></i> Yeni
+        </a>
+      </div>
+    </div>
+
+    {% if view == 'month' %}
+      <!-- Month Navigation -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ url_for('main.appointments_calendar', view='month', year=year if month>1 else year-1, month=month-1 if month>1 else 12) }}" class="btn btn-sm btn-outline-secondary">&laquo; Önceki</a>
+        <h4>{{ month_name }} {{ year }}</h4>
+        <a href="{{ url_for('main.appointments_calendar', view='month', year=year if month<12 else year+1, month=month+1 if month<12 else 1) }}" class="btn btn-sm btn-outline-secondary">Sonraki &raquo;</a>
+      </div>
+
+      <!-- Month Calendar Grid -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr class="table-light">
+              <th class="text-center">Pzt</th>
+              <th class="text-center">Sal</th>
+              <th class="text-center">Çar</th>
+              <th class="text-center">Per</th>
+              <th class="text-center">Cum</th>
+              <th class="text-center">Cmt</th>
+              <th class="text-center">Paz</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for week in month_cal %}
+              <tr>
+                {% for day in week %}
+                  <td class="align-top p-2" style="height:120px;{% if day == 0 %}background:#f8f9fa;{% endif %}">
+                    {% if day > 0 %}
+                      <div class="fw-bold small mb-1">{{ day }}</div>
+                      {% set day_date = '%04d-%02d-%02d'|format(year, month, day) %}
+                      {% for a in appointments %}
+                        {% if a.start_time.strftime('%Y-%m-%d') == day_date %}
+                          <div class="small mb-1 p-1 rounded {% if a.status=='scheduled' %}bg-primary{% elif a.status=='confirmed' %}bg-success{% elif a.status=='cancelled' %}bg-danger{% else %}bg-secondary{% endif %} bg-opacity-10 border border-{{ 'primary' if a.status=='scheduled' else ('success' if a.status=='confirmed' else ('danger' if a.status=='cancelled' else 'secondary')) }}">
+                            <a href="{{ url_for('main.edit_appointment', id=a.id) }}" class="text-decoration-none text-dark">
+                              <div class="text-truncate" style="max-width:100px;">{{ a.start_time.strftime('%H:%M') }} {{ a.title }}</div>
+                            </a>
+                          </div>
+                        {% endif %}
+                      {% endfor %}
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <!-- Week View -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ url_for('main.appointments_calendar', view='week', date=(week_start - timedelta(days=7)).strftime('%Y-%m-%d')) }}" class="btn btn-sm btn-outline-secondary">&laquo; Önceki Hafta</a>
+        <h4>{{ week_start.strftime('%d %B %Y') }} - {{ (week_start + timedelta(days=6)).strftime('%d %B %Y') }}</h4>
+        <a href="{{ url_for('main.appointments_calendar', view='week', date=(week_start + timedelta(days=7)).strftime('%Y-%m-%d')) }}" class="btn btn-sm btn-outline-secondary">Sonraki Hafta &raquo;</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr class="table-light">
+              {% for day in week_days %}
+                <th class="text-center">
+                  {{ ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][day.weekday()] }}<br>
+                  <small>{{ day.strftime('%d.%m') }}</small>
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {% for day in week_days %}
+                <td class="align-top p-2" style="min-height:400px;">
+                  {% set day_date = day.strftime('%Y-%m-%d') %}
+                  {% for a in appointments %}
+                    {% if a.start_time.strftime('%Y-%m-%d') == day_date %}
+                      <div class="mb-2 p-2 rounded border border-{{ 'primary' if a.status=='scheduled' else ('success' if a.status=='confirmed' else 'secondary') }} {% if a.status=='scheduled' %}bg-primary{% elif a.status=='confirmed' %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10">
+                        <a href="{{ url_for('main.edit_appointment', id=a.id) }}" class="text-decoration-none text-dark">
+                          <div class="fw-bold small">{{ a.start_time.strftime('%H:%M') }} - {{ a.end_time.strftime('%H:%M') }}</div>
+                          <div class="small">{{ a.title }}</div>
+                          <div class="text-muted small">{{ a.patient.first_name }} {{ a.patient.last_name }}</div>
+                        </a>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </td>
+              {% endfor %}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+    <div class="mt-3">
+      <h5>Renk Kodları</h5>
+      <span class="badge bg-primary">Planlandı</span>
+      <span class="badge bg-success">Onaylandı</span>
+      <span class="badge bg-info">Tamamlandı</span>
+      <span class="badge bg-danger">İptal</span>
+      <span class="badge bg-warning">Gelmedi</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Import timedelta for week view (already available in Python context)
+  {% if view == 'week' %}
+    from datetime import timedelta
+  {% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Lead Yönetimi{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="h3"><i class="fas fa-users"></i> Lead Yönetimi</h2>
+            <p class="text-muted">Facebook reklamları ve web sitesinden gelen potansiyel hastalar</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{{ url_for('leads.export_leads', status=status_filter, source=source_filter) }}" class="btn btn-success me-2">
+                <i class="fas fa-file-excel"></i> Excel İndir
+            </a>
+            <a href="{{ url_for('leads.api_keys') }}" class="btn btn-outline-primary">
+                <i class="fas fa-key"></i> API Ayarları
+            </a>
+        </div>
+    </div>
+
+    <!-- Help Info -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-light border">
+                <small>
+                    <i class="fas fa-info-circle text-primary"></i> 
+                    <strong>Lead Nedir?</strong> Facebook reklamlarından veya web sitenizden gelen potansiyel hasta başvurularıdır. 
+                    Lead'i değerlendirip <strong>"Hastaya Çevir"</strong> butonuyla hasta kaydı oluşturabilirsiniz.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ status_counts.new }}</h3>
+                    <small class="text-muted">Yeni</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ status_counts.contacted }}</h3>
+                    <small class="text-muted">İletişimde</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ status_counts.qualified }}</h3>
+                    <small class="text-muted">Nitelikli</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ status_counts.converted }}</h3>
+                    <small class="text-muted">Dönüştü</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-danger">{{ status_counts.rejected }}</h3>
+                    <small class="text-muted">Reddedildi</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Durum</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="all" {{ 'selected' if status_filter == 'all' }}>Tümü</option>
+                        <option value="new" {{ 'selected' if status_filter == 'new' }}>Yeni</option>
+                        <option value="contacted" {{ 'selected' if status_filter == 'contacted' }}>İletişimde</option>
+                        <option value="qualified" {{ 'selected' if status_filter == 'qualified' }}>Nitelikli</option>
+                        <option value="converted" {{ 'selected' if status_filter == 'converted' }}>Dönüştü</option>
+                        <option value="rejected" {{ 'selected' if status_filter == 'rejected' }}>Reddedildi</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Kaynak</label>
+                    <select name="source" class="form-select" onchange="this.form.submit()">
+                        <option value="all" {{ 'selected' if source_filter == 'all' }}>Tümü</option>
+                        <option value="facebook" {{ 'selected' if source_filter == 'facebook' }}>Facebook</option>
+                        <option value="website" {{ 'selected' if source_filter == 'website' }}>Web Sitesi</option>
+                        <option value="instagram" {{ 'selected' if source_filter == 'instagram' }}>Instagram</option>
+                        <option value="manual" {{ 'selected' if source_filter == 'manual' }}>Manuel</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leads Table -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ad Soyad</th>
+                        <th>İletişim</th>
+                        <th>İlgilenen Hizmet</th>
+                        <th>Kaynak</th>
+                        <th>Durum</th>
+                        <th>Tarih</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads.items %}
+                    <tr>
+                        <td>#{{ lead.id }}</td>
+                        <td>
+                            <strong>{{ lead.full_name }}</strong>
+                            {% if lead.is_converted %}
+                            <span class="badge bg-success">Hasta oldu</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if lead.phone %}<i class="fas fa-phone"></i> {{ lead.phone }}<br>{% endif %}
+                            {% if lead.email %}<i class="fas fa-envelope"></i> {{ lead.email }}{% endif %}
+                        </td>
+                        <td>
+                            {% if lead.interested_service == 'hair' %}
+                            <i class="fas fa-user text-info"></i> Saç Ekimi
+                            {% elif lead.interested_service == 'dental' %}
+                            <i class="fas fa-tooth text-primary"></i> Diş
+                            {% elif lead.interested_service == 'eye' %}
+                            <i class="fas fa-eye text-success"></i> Göz
+                            {% else %}
+                            {{ lead.interested_service or '-' }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ lead.source }}</span>
+                            {% if lead.campaign_name %}
+                            <br><small class="text-muted">{{ lead.campaign_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if lead.status == 'new' %}
+                            <span class="badge bg-primary">Yeni</span>
+                            {% elif lead.status == 'contacted' %}
+                            <span class="badge bg-info">İletişimde</span>
+                            {% elif lead.status == 'qualified' %}
+                            <span class="badge bg-warning">Nitelikli</span>
+                            {% elif lead.status == 'converted' %}
+                            <span class="badge bg-success">Dönüştü</span>
+                            {% elif lead.status == 'rejected' %}
+                            <span class="badge bg-danger">Reddedildi</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ lead.created_at.strftime('%d.%m.%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('leads.detail', id=lead.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">Henüz lead kaydı yok</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            {% if leads.pages > 1 %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% if leads.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('leads.index', page=leads.prev_num, status=status_filter, source=source_filter) }}">Önceki</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in leads.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {{ 'active' if page_num == leads.page }}">
+                                <a class="page-link" href="{{ url_for('leads.index', page=page_num, status=status_filter, source=source_filter) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if leads.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('leads.index', page=leads.next_num, status=status_filter, source=source_filter) }}">Sonraki</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

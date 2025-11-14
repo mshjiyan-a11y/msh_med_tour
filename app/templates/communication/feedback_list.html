@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Geri Bildirimler{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-star me-2"></i>Hasta Geri Bildirimleri</h2>
+        {% if nps_score is not none %}
+        <div class="badge bg-{{ 'success' if nps_score > 50 else 'warning' if nps_score > 0 else 'danger' }} fs-5">
+            NPS: {{ nps_score|int }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Filtreler -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Beklemede</option>
+                        <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>Onaylandı</option>
+                        <option value="rejected" {% if request.args.get('status') == 'rejected' %}selected{% endif %}>Reddedildi</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Filtrele
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Geri Bildirimler -->
+    {% if feedbacks %}
+    <div class="row">
+        {% for feedback in feedbacks %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">
+                                <a href="{{ url_for('main.patient_detail', id=feedback.patient_id) }}">
+                                    {{ feedback.patient.first_name }} {{ feedback.patient.last_name }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">
+                                {{ feedback.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </small>
+                        </div>
+                        <div>
+                            {% if feedback.rating %}
+                            <div class="text-warning">
+                                {% for i in range(feedback.rating) %}
+                                <i class="fas fa-star"></i>
+                                {% endfor %}
+                                {% for i in range(5 - feedback.rating) %}
+                                <i class="far fa-star"></i>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if feedback.comment %}
+                    <p class="mb-2">{{ feedback.comment }}</p>
+                    {% endif %}
+                    
+                    {% if feedback.suggestions %}
+                    <p class="text-muted mb-2"><strong>Öneriler:</strong> {{ feedback.suggestions }}</p>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="row text-center">
+                        {% if feedback.service_quality %}
+                        <div class="col">
+                            <small class="text-muted">Hizmet</small><br>
+                            <strong>{{ feedback.service_quality }}/5</strong>
+                        </div>
+                        {% endif %}
+                        {% if feedback.communication_quality %}
+                        <div class="col">
+                            <small class="text-muted">İletişim</small><br>
+                            <strong>{{ feedback.communication_quality }}/5</strong>
+                        </div>
+                        {% endif %}
+                        {% if feedback.treatment_satisfaction %}
+                        <div class="col">
+                            <small class="text-muted">Tedavi</small><br>
+                            <strong>{{ feedback.treatment_satisfaction }}/5</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if feedback.referral_likelihood %}
+                    <div class="mt-3">
+                        <span class="badge bg-{{ 'success' if feedback.nps_category == 'promoter' else 'warning' if feedback.nps_category == 'passive' else 'danger' }}">
+                            NPS: {{ feedback.referral_likelihood }}/10 - {{ feedback.nps_category|upper }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if feedback.response %}
+                    <div class="alert alert-info mt-3">
+                        <strong><i class="fas fa-reply me-2"></i>Yanıt:</strong><br>
+                        {{ feedback.response }}
+                        <br><small class="text-muted">
+                            {{ feedback.responder.username }} - 
+                            {{ feedback.responded_at.strftime('%d.%m.%Y %H:%M') }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-{{ 'warning' if feedback.status == 'pending' else 'success' if feedback.status == 'approved' else 'danger' }}">
+                            {{ feedback.status|upper }}
+                        </span>
+                        <a href="{{ url_for('communication.feedback_detail', id=feedback.id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>Detay
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-star fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Henüz geri bildirim bulunmuyor</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient.full_name }} - Hasta Detayı{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3">{{ patient.full_name }}</h2>
+            <p class="text-muted">
+                <i class="fas fa-user"></i> Hasta detayları ve muayene geçmişi
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group mb-2" role="group">
+                <a href="{{ url_for('communication.messages', patient_id=patient.id) }}" 
+                   class="btn btn-success" title="Mesaj Gönder">
+                    <i class="fas fa-envelope"></i>
+                </a>
+                <a href="{{ url_for('communication.whatsapp_link', patient_id=patient.id) }}" 
+                   class="btn btn-success" target="_blank" title="WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                {% if patient.phone %}
+                <a href="tel:{{ patient.phone }}" class="btn btn-outline-primary" title="Ara">
+                    <i class="fas fa-phone"></i>
+                </a>
+                {% endif %}
+                {% if patient.email %}
+                <a href="mailto:{{ patient.email }}" class="btn btn-outline-secondary" title="Email">
+                    <i class="fas fa-at"></i>
+                </a>
+                {% else %}
+                <button type="button" class="btn btn-outline-secondary" disabled title="Email adresi yok" 
+                        onclick="alert('Bu hastanın email adresi kayıtlı değil. Lütfen hasta bilgilerini güncelleyiniz.')">
+                    <i class="fas fa-at"></i>
+                </button>
+                {% endif %}
+            </div>
+            <br>
+            <a href="{{ url_for('main.new_encounter', patient_id=patient.id) }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Yeni Muayene
+            </a>
+            <a href="{{ url_for('main.edit_patient', id=patient.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Düzenle
+            </a>
+            <form method="POST" action="{{ url_for('main.delete_patient', id=patient.id) }}" 
+                  class="d-inline" onsubmit="return confirm('Bu hastayı ve TÜM muayene kayıtlarını silmek istediğinizden EMİN misiniz? Bu işlem GERİ ALINAMAZ!')">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Sil
+                </button>
+            </form>
+            <a href="{{ url_for('main.patients') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Geri
+            </a>
+        </div>
+    </div>
+
+    <!-- Help Info -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-light border">
+                <small>
+                    <i class="fas fa-info-circle text-primary"></i> 
+                    <strong>Yeni muayene eklemek için:</strong> Sağ üstteki <strong>"Yeni Muayene"</strong> butonuna tıklayın. Saç ekimi, diş tedavisi veya göz muayenesi bilgilerini girebilirsiniz.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Patient Info Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Hasta Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Telefon:</th>
+                            <td>{{ patient.phone }}</td>
+                        </tr>
+                        <tr>
+                            <th>E-posta:</th>
+                            <td>{{ patient.email or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Doğum Tarihi:</th>
+                            <td>{{ patient.dob.strftime('%d.%m.%Y') if patient.dob else '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Uyruk:</th>
+                            <td>{{ patient.nationality or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Pasaport No:</th>
+                            <td>{{ patient.passport_number or '-' }}</td>
+                        </tr>
+                    </table>
+                    
+                    {% if patient.notes %}
+                    <hr>
+                    <h6>Notlar:</h6>
+                    <p class="text-muted small">{{ patient.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Hotel Reservations -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Otel Rezervasyonları</h5>
+                    <a href="{{ url_for('main.add_hotel_reservation', patient_id=patient.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Yeni Rezervasyon
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if reservations %}
+                    <div class="list-group">
+                        {% for r in reservations %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ r.hotel_name }}</strong>
+                                    <div class="small text-muted">
+                                        {{ r.check_in.strftime('%d.%m.%Y') }} → {{ r.check_out.strftime('%d.%m.%Y') }}
+                                        ({{ r.nights }} gece)
+                                    </div>
+                                    <div class="small">
+                                        <span class="badge bg-{{ r.status_badge_class }}">{{ r.status }}</span>
+                                        {% if r.total_hotel_cost %}<span class="ms-2">Otel: {{ '%.2f'|format(r.total_hotel_cost) }} €</span>{% endif %}
+                                        {% if r.transfer_cost %}<span class="ms-2">Transfer: {{ '%.2f'|format(r.transfer_cost) }} €</span>{% endif %}
+                                        <span class="ms-2"><strong>Toplam:</strong> {{ '%.2f'|format(r.total_cost) }} €</span>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('main.hotel_reservation_pdf', id=r.id) }}" class="btn btn-outline-secondary" title="PDF İndir">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('main.hotel_reservation_email', id=r.id) }}" class="d-inline" onsubmit="return confirm('Rezervasyon onayını e-posta ile göndermek istiyor musunuz?');">
+                                            <button type="submit" class="btn btn-outline-success" title="E-Posta Gönder" {% if not patient.email %}disabled{% endif %}>
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        </form>
+                                        <a href="{{ url_for('main.edit_hotel_reservation', id=r.id) }}" class="btn btn-outline-warning" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('main.delete_hotel_reservation', id=r.id) }}" class="d-inline" onsubmit="return confirm('Rezervasyonu silmek istediğinize emin misiniz?');">
+                                            <button type="submit" class="btn btn-outline-danger" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-muted small">Bu hasta için henüz otel rezervasyonu eklenmedi.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Encounters List -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Muayene Kayıtları</h5>
+                </div>
+                <div class="card-body">
+                    {% if encounters %}
+                    <div class="list-group">
+                        {% for encounter in encounters %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <a href="{{ url_for('main.encounter_detail', id=encounter.id) }}" class="text-decoration-none text-dark">
+                                        {% set module_count = 0 %}
+                                        {% if encounter.hair_annotations %}{% set module_count = module_count + 1 %}{% endif %}
+                                        {% if encounter.dental_procedures %}{% set module_count = module_count + 1 %}{% endif %}
+                                        {% if encounter.eye_refraction or encounter.eye_treatments %}{% set module_count = module_count + 1 %}{% endif %}
+                                        {% if encounter.aesthetic_procedures %}{% set module_count = module_count + 1 %}{% endif %}
+                                        {% if encounter.bariatric_surgeries %}{% set module_count = module_count + 1 %}{% endif %}
+                                        {% if encounter.ivf_treatments %}{% set module_count = module_count + 1 %}{% endif %}
+                                        {% if encounter.checkup_packages %}{% set module_count = module_count + 1 %}{% endif %}
+                                        
+                                        <h6 class="mb-1">
+                                            <strong><i class="far fa-calendar-alt me-1"></i> {{ encounter.date.strftime('%d %b %Y') if encounter.date else encounter.created_at.strftime('%d %b %Y') }}</strong>
+                                            {% if module_count > 0 %}
+                                            <span class="badge bg-secondary ms-2">{{ module_count }} modül</span>
+                                            {% endif %}
+                                        </h6>
+                                        <div class="mb-2">
+                                            {% if encounter.hair_annotations %}
+                                            <span class="me-2"><i class="fas fa-user-md text-info"></i> Saç Ekimi</span>
+                                            {% endif %}
+                                            {% if encounter.dental_procedures %}
+                                            <span class="me-2"><i class="fas fa-tooth text-primary"></i> Diş</span>
+                                            {% endif %}
+                                            {% if encounter.eye_refraction or encounter.eye_treatments %}
+                                            <span class="me-2"><i class="fas fa-eye text-success"></i> Göz</span>
+                                            {% endif %}
+                                            {% if encounter.aesthetic_procedures %}
+                                            <span class="me-2"><i class="fas fa-spa text-warning"></i> Estetik</span>
+                                            {% endif %}
+                                            {% if encounter.bariatric_surgeries %}
+                                            <span class="me-2"><i class="fas fa-weight text-danger"></i> Bariatrik</span>
+                                            {% endif %}
+                                            {% if encounter.ivf_treatments %}
+                                            <span class="me-2"><i class="fas fa-baby text-pink"></i> IVF</span>
+                                            {% endif %}
+                                            {% if encounter.checkup_packages %}
+                                            <span class="me-2"><i class="fas fa-heartbeat text-danger"></i> Check-up</span>
+                                            {% endif %}
+                                            {% if module_count == 0 %}
+                                            <span class="text-muted"><i class="fas fa-stethoscope"></i> Genel muayene</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if encounter.note %}
+                                        <p class="mb-1 mt-2 text-muted small">
+                                            <i class="fas fa-quote-left"></i> {{ encounter.note[:80] }}{% if encounter.note|length > 80 %}...{% endif %}
+                                        </p>
+                                        {% endif %}
+                                    </a>
+                                </div>
+                                <div class="text-end ms-3">
+                                    <div class="mb-2">
+                                        {% if encounter.status == 'completed' %}
+                                        <span class="badge bg-success">✓ Tamamlandı</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">⋯ Taslak</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if encounter.hair_annotations %}
+                                        {# Not: Jinja içinde greft toplamını hesaplamak yerine kayıt sayısını gösteriyoruz #}
+                                        <small class="text-info d-block mb-2"><strong>{{ encounter.hair_annotations|length }}</strong> kayıt</small>
+                                    {% elif encounter.dental_procedures %}
+                                        <small class="text-primary d-block mb-2"><strong>{{ encounter.dental_procedures|length }}</strong> diş</small>
+                                    {% elif encounter.eye_refraction %}
+                                        <small class="text-success d-block mb-2">Göz refraksiyonu</small>
+                                    {% endif %}
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('main.edit_encounter', id=encounter.id) }}" 
+                                           class="btn btn-outline-warning" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('main.delete_encounter', id=encounter.id) }}" 
+                                              class="d-inline" onsubmit="return confirm('Bu muayeneyi silmek istediğinizden emin misiniz?')">
+                                            <button type="submit" class="btn btn-outline-danger" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-clipboard fa-3x mb-3"></i>
+                        <p>Henüz muayene kaydı yok.</p>
+                        <a href="{{ url_for('main.new_encounter', patient_id=patient.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> İlk Muayeneyi Ekle
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

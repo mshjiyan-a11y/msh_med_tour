@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Evrak Yükle{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Evrak Yükle</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-user me-2"></i>Hasta</label>
+                            <input type="text" class="form-control" 
+                                   value="{{ patient.first_name }} {{ patient.last_name }}" 
+                                   readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">
+                                <i class="fas fa-heading me-2"></i>Evrak Başlığı
+                            </label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   placeholder="Örn: Kan Tahlili Sonucu" required>
+                            <small class="text-muted">Evrak için açıklayıcı bir başlık girin</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="document_type" class="form-label">
+                                <i class="fas fa-tag me-2"></i>Evrak Türü
+                            </label>
+                            <select class="form-select" id="document_type" name="document_type">
+                                <option value="patient_upload">Genel Evrak</option>
+                                <option value="test_result">Tahlil/Test Sonucu</option>
+                                <option value="medical_report">Tıbbi Rapor</option>
+                                <option value="xray">Röntgen/Görüntüleme</option>
+                                <option value="prescription">Reçete</option>
+                                <option value="id_document">Kimlik Belgesi</option>
+                                <option value="insurance">Sigorta Belgesi</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Açıklama (Opsiyonel)
+                            </label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" placeholder="Evrak hakkında ek bilgi..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="file" class="form-label">
+                                <i class="fas fa-file me-2"></i>Dosya Seç
+                            </label>
+                            <input type="file" class="form-control" id="file" name="file" 
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+                            <small class="text-muted">
+                                Maksimum {{ max_size_mb }}MB | İzin verilen: {{ allowed_extensions | join(', ') | upper }}
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Önemli:</strong> Lütfen evraklarınızın net ve okunabilir olduğundan emin olun.
+                            Yüklediğiniz belgeler sağlık ekibimiz tarafından incelenecektir.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('patient_portal.my_documents', patient_id=patient.id) }}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Geri
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Yükle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="fas fa-question-circle me-2"></i>Sıkça Sorulan Sorular</h6>
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    Hangi evrakları yüklemeliyim?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Kan tahlilleri, görüntüleme sonuçları, önceki tıbbi raporlar, 
+                                    kullandığınız ilaçlar ve kronik hastalıklarınıza dair belgeler 
+                                    tedavi sürecinizi hızlandıracaktır.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Evraklarım güvende mi?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Evet, yüklediğiniz tüm evraklar güvenli sunucularda şifrelenerek 
+                                    saklanır ve sadece yetkili sağlık personeli tarafından görüntülenebilir.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

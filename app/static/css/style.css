@@ -1,0 +1,541 @@
+/* MSH Med Tour - Ultra Şık Modern Tasarım 🎨 */
+
+:root {
+    --main-color: #7a001d;
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --gradient-warm: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-ocean: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-sunset: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 15px 50px rgba(0, 0, 0, 0.15);
+    --radius-card: 20px;
+    --radius-btn: 12px;
+    
+    /* Light Theme */
+    --bg-body: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-navbar: rgba(255, 255, 255, 0.95);
+    --bg-card: #ffffff;
+    --text-primary: #2d3748;
+    --text-secondary: #718096;
+    --border-color: #e2e8f0;
+    --input-bg: #ffffff;
+    --input-border: #cbd5e0;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    --bg-body: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    --bg-navbar: rgba(26, 32, 44, 0.95);
+    --bg-card: #2d3748;
+    --text-primary: #f7fafc;
+    --text-secondary: #a0aec0;
+    --border-color: #4a5568;
+    --input-bg: #1a202c;
+    --input-border: #4a5568;
+}
+
+/* Body & Background */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg-body);
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding-top: 65px; /* Navbar için boşluk */
+    color: var(--text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Modern Navbar */
+.app-navbar {
+    background: var(--bg-navbar) !important;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease;
+    border: none !important;
+    padding: 0.5rem 0;
+}
+
+.app-navbar.solid {
+    background: var(--gradient-primary) !important;
+}
+
+.app-navbar.gradient {
+    background: var(--gradient-primary) !important;
+}
+
+.app-navbar .nav-link {
+    color: #2d3748 !important;
+    font-weight: 500;
+    margin: 0 5px;
+    border-radius: var(--radius-btn);
+    padding: 8px 16px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-navbar .nav-link:hover {
+    background: var(--gradient-primary) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.app-navbar .nav-link.active {
+    background: var(--gradient-primary) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.app-navbar.gradient .nav-link,
+.app-navbar.solid .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.app-navbar.gradient .nav-link:hover,
+.app-navbar.solid .nav-link:hover,
+.app-navbar.gradient .nav-link.active,
+.app-navbar.solid .nav-link.active {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-brand img {
+    max-height: 35px;
+    border-radius: 8px;
+}
+
+/* Modern Buttons */
+.btn {
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: var(--radius-btn);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.btn-success {
+    background: var(--gradient-success);
+    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(17, 153, 142, 0.6);
+}
+
+.btn-warning {
+    background: var(--gradient-sunset);
+    box-shadow: 0 4px 15px rgba(255, 212, 59, 0.4);
+    color: #2d3748;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 212, 59, 0.6);
+}
+
+.btn-danger {
+    background: var(--gradient-warm);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(245, 87, 108, 0.6);
+}
+
+.btn-info {
+    background: var(--gradient-ocean);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+}
+
+.btn-outline-primary,
+.btn-outline-success,
+.btn-outline-warning,
+.btn-outline-danger,
+.btn-outline-info {
+    background: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+}
+
+/* Beautiful Cards */
+.card {
+    border: none;
+    box-shadow: var(--shadow-soft);
+    border-radius: var(--radius-card);
+    backdrop-filter: blur(10px);
+    background: var(--bg-card);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.card-header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border: none;
+    border-bottom: 2px solid;
+    border-image: var(--gradient-primary) 1;
+    font-weight: 600;
+}
+
+.stats-card {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: var(--radius-card);
+    padding: 1.5rem;
+}
+
+/* Container with blur background */
+.container-fluid {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-top: 1rem;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+    border-radius: var(--radius-btn);
+    border: 2px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Badges */
+.badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.badge-soft {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    color: #667eea;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+/* Alerts */
+.alert {
+    border: none;
+    border-radius: var(--radius-card);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-soft);
+}
+
+/* Table */
+.table {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: var(--radius-card);
+}
+
+.table thead th {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border: none;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.table-hover tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    transform: scale(1.01);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Modal */
+.modal-content {
+    border: none;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-hover);
+}
+
+.modal-header {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+/* Quick Action Cards */
+.quick-action-card {
+    text-align: center;
+    padding: 2rem;
+    border-radius: var(--radius-card);
+    background: rgba(255, 255, 255, 0.95);
+    transition: all 0.3s ease;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.quick-action-card i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Login Page Styles */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-container::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    top: -250px;
+    right: -250px;
+    animation: float 20s infinite ease-in-out;
+}
+
+.login-container::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    bottom: -200px;
+    left: -200px;
+    animation: float 15s infinite ease-in-out reverse;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(30px, -30px) rotate(120deg); }
+    66% { transform: translate(-20px, 20px) rotate(240deg); }
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 3rem;
+    max-width: 450px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-card h3 {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.login-card .form-control {
+    padding: 1rem;
+    border-radius: 15px;
+    border: 2px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+.login-card .btn-primary {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+/* Utilities */
+.text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Responsive & Mobile Optimization */
+@media (max-width: 992px) {
+    /* Compact navbar on tablets */
+    .app-navbar .nav-link {
+        padding: 6px 12px !important;
+        font-size: 0.9rem;
+    }
+    
+    body {
+        padding-top: 60px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Mobile-first adjustments */
+    body {
+        padding-top: 56px;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+        border-radius: 15px;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    .navbar-brand img {
+        max-height: 28px;
+    }
+    
+    .login-card {
+        padding: 1.5rem;
+        margin: 0.5rem;
+        border-radius: 15px;
+    }
+    
+    /* Touch-friendly buttons */
+    .btn {
+        padding: 12px 20px;
+        font-size: 1rem;
+        min-height: 44px; /* Apple's recommended touch target */
+    }
+    
+    .btn-sm {
+        min-height: 38px;
+        padding: 8px 16px;
+    }
+    
+    /* Responsive tables */
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .table td, .table th {
+        padding: 0.5rem;
+    }
+    
+    /* Stack form rows on mobile */
+    .row.g-3 > [class*='col-'] {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Mobile menu toggle */
+    .navbar-toggler {
+        border: none;
+        padding: 8px;
+    }
+    
+    .navbar-collapse {
+        background: rgba(255, 255, 255, 0.98);
+        margin-top: 10px;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Full-width mobile inputs */
+    .form-control, .form-select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Hide less important columns on mobile */
+    .table .mobile-hide {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extra small screens */
+    h1, .h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2, .h2, .h3 {
+        font-size: 1.5rem;
+    }
+    
+    .container-fluid {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Stack buttons vertically on very small screens */
+    .btn-group-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn-group-vertical .btn {
+        width: 100%;
+    }
+}
+
+/* Print */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}

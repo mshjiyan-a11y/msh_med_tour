@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Lead'i Hastaya Çevir{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-check"></i> Lead'i Hastaya Çevir</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Bu lead'i hasta kaydına çeviriyorsunuz. Bilgileri kontrol edip düzenleyebilirsiniz.
+                    </div>
+
+                    <form method="POST">
+                        <h5 class="mb-3">Lead Bilgileri</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Kaynak</label>
+                                <input type="text" class="form-control" value="{{ lead.source }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">İlgilendiği Hizmet</label>
+                                <input type="text" class="form-control" value="{{ lead.interested_service or '-' }}" readonly>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Hasta Bilgileri</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Ad <span class="text-danger">*</span></label>
+                                <input type="text" name="first_name" class="form-control" 
+                                       value="{{ lead.first_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Soyad <span class="text-danger">*</span></label>
+                                <input type="text" name="last_name" class="form-control" 
+                                       value="{{ lead.last_name }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Telefon <span class="text-danger">*</span></label>
+                                <input type="text" name="phone" class="form-control" 
+                                       value="{{ lead.phone }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">E-posta</label>
+                                <input type="email" name="email" class="form-control" 
+                                       value="{{ lead.email or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Doğum Tarihi</label>
+                                <input type="date" name="dob" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Uyruk</label>
+                                <input type="text" name="nationality" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notlar</label>
+                            <textarea name="notes" class="form-control" rows="3">Lead'den çevrildi: {{ lead.message or '' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('leads.detail', id=lead.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Hastaya Çevir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

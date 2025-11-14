@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Profil - MSH Med Tour{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Kullanıcı Profili</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th width="30%">Kullanıcı Adı:</th>
+                            <td>{{ current_user.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>E-posta:</th>
+                            <td>{{ current_user.email or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ad Soyad:</th>
+                            <td>
+                                {% if current_user.first_name or current_user.last_name %}
+                                    {{ current_user.first_name }} {{ current_user.last_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Telefon:</th>
+                            <td>{{ current_user.phone or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Rol:</th>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if current_user.role == 'admin' else 'primary' }}">
+                                    {{ current_user.role }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Distribütör:</th>
+                            <td>{{ current_user.distributor.name if current_user.distributor else '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Son Giriş:</th>
+                            <td>{{ current_user.last_login.strftime('%d.%m.%Y %H:%M') if current_user.last_login else '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Hesap Oluşturma:</th>
+                            <td>{{ current_user.created_at.strftime('%d.%m.%Y %H:%M') if current_user.created_at else '-' }}</td>
+                        </tr>
+                    </table>
+                    
+                    <hr>
+                    
+                    <h6>Şifre Değiştir</h6>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Mevcut Şifre</label>
+                            <input type="password" name="current_password" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Yeni Şifre</label>
+                            <input type="password" name="new_password" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Yeni Şifre (Tekrar)</label>
+                            <input type="password" name="confirm_password" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key"></i> Şifreyi Güncelle
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

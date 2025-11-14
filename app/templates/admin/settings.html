@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Genel Ayarlar{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex align-items-center mb-3">
+    <h4 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Genel Ayarlar</h4>
+    <span class="badge bg-dark ms-2">Süper Yönetici</span>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="card p-3">
+    <!-- Logo Upload Section -->
+    <div class="row g-3 mb-4">
+      <div class="col-12">
+        <h5 class="text-gradient"><i class="fas fa-image me-2"></i>Logo Yönetimi</h5>
+        <hr>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Mevcut Logo</label>
+        <div class="border rounded p-3 text-center" style="background: rgba(102, 126, 234, 0.05);">
+          {% if settings.logo_path %}
+            <img src="{{ url_for('static', filename='uploads/' + settings.logo_path) }}" 
+                 alt="Logo" style="max-height: 100px; max-width: 100%;">
+          {% else %}
+            <i class="fas fa-image fa-3x text-muted mb-2"></i>
+            <p class="text-muted mb-0">Logo yüklenmemiş</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Yeni Logo Yükle (Maks 1MB)</label>
+        <input type="file" class="form-control" name="logo" accept="image/*">
+        <small class="text-muted">
+          <i class="fas fa-info-circle me-1"></i>
+          Logo header, PDF ve çıktılarda görünecektir. PNG, JPG, GIF formatları desteklenir.
+        </small>
+      </div>
+    </div>
+
+    <!-- Module Toggles -->
+    <div class="row g-3 mb-4">
+      <div class="col-12">
+        <h5 class="text-gradient"><i class="fas fa-puzzle-piece me-2"></i>Modül Yönetimi</h5>
+        <hr>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_hair" name="enable_hair" {% if settings.enable_hair %}checked{% endif %}>
+          <label class="form-check-label" for="enable_hair">
+            <i class="fas fa-user-md me-1"></i>Saç Ekimi Modülü
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_teeth" name="enable_teeth" {% if settings.enable_teeth %}checked{% endif %}>
+          <label class="form-check-label" for="enable_teeth">
+            <i class="fas fa-tooth me-1"></i>Diş Modülü
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_eye" name="enable_eye" {% if settings.enable_eye %}checked{% endif %}>
+          <label class="form-check-label" for="enable_eye">
+            <i class="fas fa-eye me-1"></i>Göz Modülü
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_hotel" name="enable_hotel" {% if settings.enable_hotel %}checked{% endif %}>
+          <label class="form-check-label" for="enable_hotel">
+            <i class="fas fa-hotel me-1"></i>Otel Rezervasyonu
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_leads" name="enable_leads" {% if settings.enable_leads %}checked{% endif %}>
+          <label class="form-check-label" for="enable_leads">
+            <i class="fas fa-bullhorn me-1"></i>Lead Yönetimi
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_aesthetic" name="enable_aesthetic" {% if settings.enable_aesthetic %}checked{% endif %}>
+          <label class="form-check-label" for="enable_aesthetic">
+            <i class="fas fa-cut me-1"></i>Estetik Cerrahi
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_bariatric" name="enable_bariatric" {% if settings.enable_bariatric %}checked{% endif %}>
+          <label class="form-check-label" for="enable_bariatric">
+            <i class="fas fa-weight me-1"></i>Obezite Cerrahisi
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_ivf" name="enable_ivf" {% if settings.enable_ivf %}checked{% endif %}>
+          <label class="form-check-label" for="enable_ivf">
+            <i class="fas fa-baby me-1"></i>IVF (Tüp Bebek)
+          </label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="enable_checkup" name="enable_checkup" {% if settings.enable_checkup %}checked{% endif %}>
+          <label class="form-check-label" for="enable_checkup">
+            <i class="fas fa-heartbeat me-1"></i>Check-Up Paketleri
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme Settings -->
+    <div class="row g-3">
+      <div class="col-12">
+        <h5 class="text-gradient"><i class="fas fa-palette me-2"></i>Tema Ayarları</h5>
+        <hr>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Tema Rengi</label>
+        <input type="color" class="form-control form-control-color" name="theme_color" value="{{ settings.theme_color }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Navbar Stili</label>
+        <select class="form-select" name="navbar_style">
+          <option value="glass" {% if settings.navbar_style=='glass' %}selected{% endif %}>
+            <i class="fas fa-glass"></i> Cam Efekti
+          </option>
+          <option value="solid" {% if settings.navbar_style=='solid' %}selected{% endif %}>
+            <i class="fas fa-square"></i> Düz Renk
+          </option>
+          <option value="gradient" {% if settings.navbar_style=='gradient' %}selected{% endif %}>
+            <i class="fas fa-fill-drip"></i> Gradyan
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button class="btn btn-primary"><i class="fas fa-save me-1"></i>Kaydet</button>
+      <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary">İptal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Uçuş Ekle - {{ journey.journey_code }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card card-modern">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-plane"></i> Uçuş Bilgisi Ekle</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label required">Uçuş Türü</label>
+                <select name="flight_type" class="form-select" required>
+                  <option value="arrival">Varış Uçuşu</option>
+                  <option value="departure">Dönüş Uçuşu</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">PNR / Rezervasyon Kodu</label>
+                <input type="text" name="booking_reference" class="form-control" placeholder="Örn: AB12CD">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Havayolu</label>
+                <input type="text" name="airline" class="form-control" placeholder="Örn: Turkish Airlines">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Uçuş No</label>
+                <input type="text" name="flight_number" class="form-control" placeholder="Örn: TK1234">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label required">Kalkış Tarih/Saat</label>
+                <input type="datetime-local" name="scheduled_departure" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label required">Varış Tarih/Saat</label>
+                <input type="datetime-local" name="scheduled_arrival" class="form-control" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Kalkış Şehir</label>
+                <input type="text" name="departure_city" class="form-control" placeholder="Örn: İstanbul">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Varış Şehir</label>
+                <input type="text" name="arrival_city" class="form-control" placeholder="Örn: Antalya">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Kalkış Havalimanı</label>
+                <input type="text" name="departure_airport" class="form-control" placeholder="Örn: IST">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Varış Havalimanı</label>
+                <input type="text" name="arrival_airport" class="form-control" placeholder="Örn: AYT">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Yolcu Sayısı</label>
+                <input type="number" name="passenger_count" value="1" min="1" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Koltuk No(ları)</label>
+                <input type="text" name="seat_numbers" class="form-control" placeholder="Örn: 12A,12B">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Bagaj Bilgisi</label>
+                <input type="text" name="baggage_info" class="form-control" placeholder="Örn: 2 valiz + 1 el">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Terminal</label>
+                <input type="text" name="terminal" class="form-control" placeholder="Örn: T1">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Kapı (Gate)</label>
+                <input type="text" name="gate" class="form-control" placeholder="Örn: B12">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Notlar</label>
+                <textarea name="notes" class="form-control" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <a href="{{ url_for('journey.journey_detail', id=journey.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Geri</a>
+              <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

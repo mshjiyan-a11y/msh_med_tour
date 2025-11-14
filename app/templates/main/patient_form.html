@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Yeni Hasta' if not patient else 'Hasta Düzenle' }} - MSH Med Tour{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Help Info -->
+            <div class="alert alert-info mb-3">
+                <h6><i class="fas fa-clipboard-check"></i> Hasta Kayıt Formu</h6>
+                <small>
+                    Aşağıdaki formu doldurarak yeni hasta kaydı oluşturun. 
+                    <strong class="text-danger">*</strong> işaretli alanlar zorunludur. 
+                    Hasta kaydedildikten sonra muayene ekleyebilirsiniz.
+                </small>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">{{ 'Yeni Hasta' if not patient else 'Hasta Düzenle' }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.first_name.label(class="form-label") }}
+                                    {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                                    {% for error in form.first_name.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.last_name.label(class="form-label") }}
+                                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                    {% for error in form.last_name.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                    {% for error in form.email.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else "")) }}
+                                    {% for error in form.phone.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.dob.label(class="form-label") }}
+                                    {{ form.dob(class="form-control" + (" is-invalid" if form.dob.errors else ""), type="date") }}
+                                    {% for error in form.dob.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.nationality.label(class="form-label") }}
+                                    {{ form.nationality(class="form-control" + (" is-invalid" if form.nationality.errors else "")) }}
+                                    {% for error in form.nationality.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    {{ form.passport_number.label(class="form-label") }}
+                                    {{ form.passport_number(class="form-control" + (" is-invalid" if form.passport_number.errors else "")) }}
+                                    {% for error in form.passport_number.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-group">
+                                {{ form.notes.label(class="form-label") }}
+                                {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=4) }}
+                                {% for error in form.notes.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('main.patients') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Geri
+                                </a>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Kaydet
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Telefon numarası için input mask
+    $('#phone').inputmask('+90 (999) 999-9999');
+});
+</script>
+{% endblock %}

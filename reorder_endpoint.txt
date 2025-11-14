@@ -1,0 +1,21 @@
+// Reorder endpoint eklemesi için journey_routes.py'ye eklenecek
+
+
+@bp.route('/<int:id>/reorder-steps', methods=['POST'])
+@login_required
+def reorder_steps(id):
+    """Adım sıralamasını güncelle (AJAX drag-drop)"""
+    journey = PatientJourney.query.filter_by(id=id, distributor_id=current_user.distributor_id).first_or_404()
+    
+    step_ids = request.json.get('step_ids', [])
+    if not step_ids:
+        return jsonify({'success': False, 'message': 'Adım listesi boş'}), 400
+    
+    # Her adıma yeni sequence ata
+    for idx, step_id in enumerate(step_ids, start=1):
+        step = JourneyStep.query.get(step_id)
+        if step and step.journey_id == journey.id:
+            step.sequence = idx
+    
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Sıralama güncellendi'})

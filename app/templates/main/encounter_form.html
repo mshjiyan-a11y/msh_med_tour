@@ -1,0 +1,1579 @@
+{% extends "base.html" %}
+
+{% block title %}Yeni Muayene - {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="h3">Yeni Muayene - {{ patient.full_name }}</h2>
+            <p class="text-muted">Telefon: {{ patient.phone }} | E-posta: {{ patient.email or '-' }}</p>
+        </div>
+    </div>
+
+    <!-- Comprehensive Help Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-primary">
+                <h5 class="alert-heading"><i class="fas fa-graduation-cap"></i> Muayene Nasıl Oluşturulur?</h5>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-user-md"></i> 1. Genel Bilgiler</h6>
+                        <small>Muayene tarihini ve durumunu seçin. Genel notlar ekleyebilirsiniz.</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-tooth"></i> 2. Modül Seçimi</h6>
+                        <small>Saç ekimi, diş, göz, estetik cerrahi, bariatrik, tüp bebek, check-up modüllerini aktifleştirin.</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-save"></i> 3. Kaydet</h6>
+                        <small>Formu doldurup kaydedin. Daha sonra düzenleyebilir veya PDF indirebilirsiniz.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="row">
+            <!-- General Info -->
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Genel Bilgiler</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Muayene Tarihi</label>
+                                <input type="date" name="date" class="form-control" 
+                                       value="{{ request.form.get('date', '') or today }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Durum</label>
+                                <select name="status" class="form-control">
+                                    <option value="draft">Taslak</option>
+                                    <option value="completed">Tamamlandı</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Genel Notlar</label>
+                            <textarea name="note" class="form-control" rows="3">{{ request.form.get('note', '') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hair Module -->
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_hair" name="enable_hair" 
+                                   onchange="toggleModule('hair')" {{ 'checked' if request.form.get('enable_hair') }}>
+                            <label class="form-check-label" for="enable_hair">
+                                <i class="fas fa-user"></i> <strong>SAÇ EKİMİ</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="hair_module" style="display: {{ 'block' if request.form.get('enable_hair') else 'none' }};">
+                        
+                        <!-- Help -->
+                        <div class="alert alert-light border mb-3">
+                            <small>
+                                <i class="fas fa-hand-pointer text-info"></i> 
+                                <strong>Nasıl Kullanılır:</strong> Aşağıdaki saç görselinde ekilen bölgelere tıklayın. Açılan kutuda greft sayısını girin. Birden fazla bölge seçebilirsiniz.
+                            </small>
+                        </div>
+
+                        <!-- Interactive Hair Chart -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-center mb-3">Saç Bölgeleri - Eklenecek bölgeye tıklayın</h6>
+                                
+                                <div class="hair-chart-container">
+                                    <!-- Hair diagram -->
+                                    <svg viewBox="0 0 400 300" class="hair-diagram">
+                                        <!-- Head outline -->
+                                        <ellipse cx="200" cy="180" rx="120" ry="140" fill="#f5f5f5" stroke="#999" stroke-width="2"/>
+                                        
+                                        <!-- Frontal Zone (Ön Bölge) -->
+                                        <path id="hair-frontal" class="hair-zone" data-region="frontal" 
+                                              d="M 120,100 Q 200,80 280,100 L 260,130 Q 200,110 140,130 Z" 
+                                              fill="#e3f2fd" stroke="#2196F3" stroke-width="2"
+                                              onclick="selectHairRegion('frontal', 'Ön Bölge (Frontal)')"/>
+                                        <text x="200" y="115" text-anchor="middle" class="region-label">Ön Bölge</text>
+                                        
+                                        <!-- Mid-Scalp (Orta Bölge) -->
+                                        <path id="hair-midscalp" class="hair-zone" data-region="midscalp"
+                                              d="M 140,130 Q 200,110 260,130 L 250,180 Q 200,160 150,180 Z"
+                                              fill="#fff3e0" stroke="#FF9800" stroke-width="2"
+                                              onclick="selectHairRegion('midscalp', 'Orta Bölge (Mid-Scalp)')"/>
+                                        <text x="200" y="155" text-anchor="middle" class="region-label">Orta Bölge</text>
+                                        
+                                        <!-- Crown (Tepe) -->
+                                        <ellipse id="hair-crown" class="hair-zone" data-region="crown"
+                                                cx="200" cy="210" rx="50" ry="45" 
+                                                fill="#ffebee" stroke="#f44336" stroke-width="2"
+                                                onclick="selectHairRegion('crown', 'Tepe (Crown)')"/>
+                                        <text x="200" y="215" text-anchor="middle" class="region-label">Tepe</text>
+                                        
+                                        <!-- Temporal (Şakak) - Left -->
+                                        <path id="hair-temporal-left" class="hair-zone" data-region="temporal_left"
+                                              d="M 110,140 Q 90,160 95,190 L 130,180 Q 120,160 110,140 Z"
+                                              fill="#e8f5e9" stroke="#4CAF50" stroke-width="2"
+                                              onclick="selectHairRegion('temporal_left', 'Sol Şakak')"/>
+                                        <text x="105" y="170" text-anchor="middle" class="region-label small-label">Sol</text>
+                                        
+                                        <!-- Temporal (Şakak) - Right -->
+                                        <path id="hair-temporal-right" class="hair-zone" data-region="temporal_right"
+                                              d="M 290,140 Q 310,160 305,190 L 270,180 Q 280,160 290,140 Z"
+                                              fill="#e8f5e9" stroke="#4CAF50" stroke-width="2"
+                                              onclick="selectHairRegion('temporal_right', 'Sağ Şakak')"/>
+                                        <text x="295" y="170" text-anchor="middle" class="region-label small-label">Sağ</text>
+                                        
+                                        <!-- Vertex (Arka Tepe) -->
+                                        <ellipse id="hair-vertex" class="hair-zone" data-region="vertex"
+                                                cx="200" cy="265" rx="40" ry="35"
+                                                fill="#f3e5f5" stroke="#9C27B0" stroke-width="2"
+                                                onclick="selectHairRegion('vertex', 'Arka Tepe (Vertex)')"/>
+                                        <text x="200" y="270" text-anchor="middle" class="region-label small-label">Arka</text>
+                                    </svg>
+                                </div>
+
+                                <!-- Norwood Scale Reference -->
+                                <div class="mt-3 text-center">
+                                    <small class="text-muted">
+                                        <strong>Norwood Skalası:</strong> 
+                                        <span class="badge bg-light text-dark mx-1">1-2: Hafif</span>
+                                        <span class="badge bg-light text-dark mx-1">3-4: Orta</span>
+                                        <span class="badge bg-light text-dark mx-1">5-7: İleri</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hair Pattern Selection -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Saç Dökülme Seviyesi (Norwood)</label>
+                                <select name="hair_pattern" id="hair_pattern" class="form-control">
+                                    <option value="">Seçiniz...</option>
+                                    <option value="norwood_01">Norwood 1 (Minimal)</option>
+                                    <option value="norwood_02">Norwood 2 (Hafif)</option>
+                                    <option value="norwood_03">Norwood 3 (Orta-Hafif)</option>
+                                    <option value="norwood_04">Norwood 4 (Orta)</option>
+                                    <option value="norwood_05">Norwood 5 (Orta-İleri)</option>
+                                    <option value="norwood_06">Norwood 6 (İleri)</option>
+                                    <option value="norwood_07">Norwood 7 (Çok İleri)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Toplam Greft Sayısı</label>
+                                <input type="number" name="hair_total_grafts" id="hair_total_grafts" 
+                                       class="form-control" placeholder="Örn: 3000" readonly>
+                                <small class="text-muted">Bölgelerden otomatik hesaplanır</small>
+                            </div>
+                        </div>
+
+                        <!-- Hair Regions List -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6>Seçili Saç Ekimi Bölgeleri</h6>
+                                <div id="hair_regions">
+                                    <!-- Regions will be added here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General Hair Notes -->
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Genel Notlar</label>
+                                <textarea name="hair_notes" class="form-control" rows="2" 
+                                          placeholder="Ek bilgiler, özel durumlar...">{{ request.form.get('hair_notes', '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dental Module -->
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_dental" name="enable_dental" 
+                                   onchange="toggleModule('dental')" {{ 'checked' if request.form.get('enable_dental') }}>
+                            <label class="form-check-label" for="enable_dental">
+                                <i class="fas fa-tooth"></i> <strong>DİŞ TEDAVİSİ</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="dental_module" style="display: {{ 'block' if request.form.get('enable_dental') else 'none' }};">
+                        
+                        <!-- Help -->
+                        <div class="alert alert-light border mb-3">
+                            <small>
+                                <i class="fas fa-hand-pointer text-primary"></i> 
+                                <strong>Nasıl Kullanılır:</strong> Aşağıdaki 32 diş görselinde tedavi yapılacak dişlere tıklayın. Seçilen dişler renkli gösterilecek ve PDF'de görünecektir.
+                            </small>
+                        </div>
+
+                        <!-- Interactive Dental Chart -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-center mb-3">Diş Şeması - İşlem için dişe tıklayın</h6>
+                                
+                                <!-- Upper Jaw -->
+                                <div class="dental-chart mb-3">
+                                    <div class="text-center text-muted small mb-1">ÜST ÇENE</div>
+                                    <div class="d-flex justify-content-center align-items-center mb-2">
+                                        <!-- Right side upper -->
+                                        <div class="d-flex">
+                                            {% for tooth in [18, 17, 16, 15, 14, 13, 12, 11] %}
+                                            <div class="tooth-box" data-tooth="{{ tooth }}" onclick="selectTooth({{ tooth }})">
+                                                <div class="tooth-number">{{ tooth }}</div>
+                                                <i class="fas fa-tooth tooth-icon"></i>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <!-- Left side upper -->
+                                        <div class="d-flex">
+                                            {% for tooth in [21, 22, 23, 24, 25, 26, 27, 28] %}
+                                            <div class="tooth-box" data-tooth="{{ tooth }}" onclick="selectTooth({{ tooth }})">
+                                                <div class="tooth-number">{{ tooth }}</div>
+                                                <i class="fas fa-tooth tooth-icon"></i>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Lower Jaw -->
+                                <div class="dental-chart">
+                                    <div class="d-flex justify-content-center align-items-center mb-2">
+                                        <!-- Right side lower -->
+                                        <div class="d-flex">
+                                            {% for tooth in [48, 47, 46, 45, 44, 43, 42, 41] %}
+                                            <div class="tooth-box" data-tooth="{{ tooth }}" onclick="selectTooth({{ tooth }})">
+                                                <i class="fas fa-tooth tooth-icon"></i>
+                                                <div class="tooth-number">{{ tooth }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <!-- Left side lower -->
+                                        <div class="d-flex">
+                                            {% for tooth in [31, 32, 33, 34, 35, 36, 37, 38] %}
+                                            <div class="tooth-box" data-tooth="{{ tooth }}" onclick="selectTooth({{ tooth }})">
+                                                <i class="fas fa-tooth tooth-icon"></i>
+                                                <div class="tooth-number">{{ tooth }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="text-center text-muted small">ALT ÇENE</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dental Procedures List -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h6>Seçili Diş Tedavileri</h6>
+                                <div id="dental_procedures">
+                                    <!-- Procedures will be added here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Eye Module -->
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_eye" name="enable_eye" 
+                                   onchange="toggleModule('eye')" {{ 'checked' if request.form.get('enable_eye') }}>
+                            <label class="form-check-label" for="enable_eye">
+                                <i class="fas fa-eye"></i> <strong>GÖZ AMELİYATI</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="eye_module" style="display: {{ 'block' if request.form.get('enable_eye') else 'none' }};">
+                        
+                        <!-- Help -->
+                        <div class="alert alert-light border mb-3">
+                            <small>
+                                <i class="fas fa-info-circle text-success"></i> 
+                                <strong>Nasıl Kullanılır:</strong> Önce tedavi edilecek gözü seçin (sağ/sol). Sonra refraksiyon değerlerini (SPH/CYL/AXIS) kaydırıcılarla girin. Tedavi bilgilerini yazın.
+                            </small>
+                        </div>
+
+                        <!-- Eye Diagram -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-eye"></i> Göz Seçimi
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="eye-selector">
+                                    <div class="eye-option" id="eye-selector-od" onclick="selectEye('OD', 'Sağ Göz')">
+                                        <svg width="80" height="80" viewBox="0 0 100 100">
+                                            <ellipse cx="50" cy="50" rx="45" ry="30" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+                                            <circle cx="50" cy="50" r="20" fill="#1976d2"/>
+                                            <circle cx="50" cy="50" r="10" fill="#000"/>
+                                            <circle cx="55" cy="45" r="3" fill="#fff"/>
+                                        </svg>
+                                        <div class="eye-label">Sağ Göz (OD)</div>
+                                    </div>
+                                    <div class="eye-option" id="eye-selector-os" onclick="selectEye('OS', 'Sol Göz')">
+                                        <svg width="80" height="80" viewBox="0 0 100 100">
+                                            <ellipse cx="50" cy="50" rx="45" ry="30" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+                                            <circle cx="50" cy="50" r="20" fill="#1976d2"/>
+                                            <circle cx="50" cy="50" r="10" fill="#000"/>
+                                            <circle cx="55" cy="45" r="3" fill="#fff"/>
+                                        </svg>
+                                        <div class="eye-label">Sol Göz (OS)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Refraction Values -->
+                        <div id="eye_refraction_form" style="display:none;">
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <strong id="current_eye_label">Sağ Göz (OD)</strong> - Refraksiyon Değerleri
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">
+                                            SPH (Sphere) 
+                                            <span class="badge bg-info" id="sph_value_display">0.00</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="eye_sph_input" 
+                                               min="-20" max="20" step="0.25" value="0"
+                                               oninput="updateRefractionValue('sph', this.value)">
+                                        <div class="d-flex justify-content-between text-muted small">
+                                            <span>-20.00</span>
+                                            <span>0.00</span>
+                                            <span>+20.00</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">
+                                            CYL (Cylinder) 
+                                            <span class="badge bg-info" id="cyl_value_display">0.00</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="eye_cyl_input" 
+                                               min="-10" max="10" step="0.25" value="0"
+                                               oninput="updateRefractionValue('cyl', this.value)">
+                                        <div class="d-flex justify-content-between text-muted small">
+                                            <span>-10.00</span>
+                                            <span>0.00</span>
+                                            <span>+10.00</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">
+                                            AXIS (Eksen) 
+                                            <span class="badge bg-info" id="axis_value_display">0°</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="eye_axis_input" 
+                                               min="0" max="180" step="1" value="0"
+                                               oninput="updateRefractionValue('axis', this.value)">
+                                        <div class="d-flex justify-content-between text-muted small">
+                                            <span>0°</span>
+                                            <span>90°</span>
+                                            <span>180°</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Görme Keskinliği</label>
+                                        <select class="form-select" id="eye_visual_acuity">
+                                            <option value="">Seçiniz</option>
+                                            <option value="20/20">20/20 (Normal)</option>
+                                            <option value="20/25">20/25</option>
+                                            <option value="20/30">20/30</option>
+                                            <option value="20/40">20/40</option>
+                                            <option value="20/50">20/50</option>
+                                            <option value="20/70">20/70</option>
+                                            <option value="20/100">20/100</option>
+                                            <option value="20/200">20/200</option>
+                                            <option value="CF">CF (Counting Fingers)</option>
+                                            <option value="HM">HM (Hand Motion)</option>
+                                            <option value="LP">LP (Light Perception)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-primary btn-sm" 
+                                            onclick="saveEyeRefraction()">
+                                        <i class="fas fa-save"></i> Bu Gözü Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Saved Eye Data -->
+                        <div id="eye_data_summary" class="mb-3"></div>
+                        
+                        <!-- Procedure Selection -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <i class="fas fa-procedures"></i> Planlanan İşlem
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="procedure-card" onclick="selectProcedure('LASIK')">
+                                            <i class="fas fa-laser fa-2x text-primary"></i>
+                                            <div class="mt-2"><strong>LASIK</strong></div>
+                                            <small class="text-muted">Laser keratomileusis</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="procedure-card" onclick="selectProcedure('PRK')">
+                                            <i class="fas fa-eye-dropper fa-2x text-success"></i>
+                                            <div class="mt-2"><strong>PRK</strong></div>
+                                            <small class="text-muted">Photorefractive keratectomy</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="procedure-card" onclick="selectProcedure('SMILE')">
+                                            <i class="fas fa-grin-beam fa-2x text-warning"></i>
+                                            <div class="mt-2"><strong>SMILE</strong></div>
+                                            <small class="text-muted">Small incision lenticule extraction</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="procedure-card" onclick="selectProcedure('Lens Replacement')">
+                                            <i class="fas fa-exchange-alt fa-2x text-info"></i>
+                                            <div class="mt-2"><strong>Lens Değişimi</strong></div>
+                                            <small class="text-muted">Intraocular lens</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="procedure-card" onclick="selectProcedure('Cataract')">
+                                            <i class="fas fa-cloud fa-2x text-secondary"></i>
+                                            <div class="mt-2"><strong>Katarakt</strong></div>
+                                            <small class="text-muted">Cataract surgery</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="procedure-card" onclick="selectProcedure('Other')">
+                                            <i class="fas fa-ellipsis-h fa-2x text-dark"></i>
+                                            <div class="mt-2"><strong>Diğer</strong></div>
+                                            <small class="text-muted">Custom procedure</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="eye_procedure" id="eye_procedure_input">
+                                <div id="selected_procedure_display" class="mt-3"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Treatment Selection -->
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <i class="fas fa-medical"></i> Tedavi Planı
+                            </div>
+                            <div class="card-body">
+                                <div class="treatment-selection">
+                                    <div class="treatment-option" onclick="toggleTreatment('Pre-operative Exam')">
+                                        <i class="fas fa-clipboard-check"></i>
+                                        <span>Pre-operative Muayene</span>
+                                    </div>
+                                    <div class="treatment-option" onclick="toggleTreatment('Surgery')">
+                                        <i class="fas fa-procedures"></i>
+                                        <span>Cerrahi İşlem</span>
+                                    </div>
+                                    <div class="treatment-option" onclick="toggleTreatment('Post-operative Care')">
+                                        <i class="fas fa-heartbeat"></i>
+                                        <span>Post-operative Bakım</span>
+                                    </div>
+                                    <div class="treatment-option" onclick="toggleTreatment('Medication')">
+                                        <i class="fas fa-pills"></i>
+                                        <span>İlaç Tedavisi</span>
+                                    </div>
+                                    <div class="treatment-option" onclick="toggleTreatment('Follow-up')">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <span>Kontrol Randevusu</span>
+                                    </div>
+                                </div>
+                                <div id="selected_treatments_list" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aesthetic Surgery Module -->
+            {% if app_settings.enable_aesthetic %}
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_aesthetic" name="enable_aesthetic" 
+                                   onchange="toggleModule('aesthetic')" {{ 'checked' if request.form.get('enable_aesthetic') }}>
+                            <label class="form-check-label" for="enable_aesthetic">
+                                <i class="fas fa-cut"></i> <strong>ESTETİK CERRAHİ</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="aesthetic_module" style="display: {{ 'block' if request.form.get('enable_aesthetic') else 'none' }};">
+                        <div class="alert alert-light border mb-3">
+                            <small><i class="fas fa-info-circle"></i> Burun estetiği, meme, liposuction ve diğer estetik ameliyatlar için</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ameliyat Tipi</label>
+                                <select class="form-control" name="aesthetic_type">
+                                    <option value="">Seçiniz...</option>
+                                    <option value="rhinoplasty">Burun Estetiği (Rinoplasti)</option>
+                                    <option value="breast_augmentation">Meme Büyütme</option>
+                                    <option value="breast_reduction">Meme Küçültme</option>
+                                    <option value="liposuction">Liposuction (Yağ Aldırma)</option>
+                                    <option value="abdominoplasty">Karın Germe</option>
+                                    <option value="face_lift">Yüz Gerdirme</option>
+                                    <option value="blepharoplasty">Göz Kapağı Estetiği</option>
+                                    <option value="bbl">Brazilian Butt Lift (BBL)</option>
+                                    <option value="other">Diğer</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fiyat (€)</label>
+                                <input type="number" step="0.01" class="form-control" name="aesthetic_price" placeholder="Örn: 3500.00">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notlar</label>
+                            <textarea class="form-control" name="aesthetic_notes" rows="2" placeholder="Teknik detaylar, implant boyutu, vs..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Bariatric Surgery Module -->
+            {% if app_settings.enable_bariatric %}
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_bariatric" name="enable_bariatric" 
+                                   onchange="toggleModule('bariatric')" {{ 'checked' if request.form.get('enable_bariatric') }}>
+                            <label class="form-check-label" for="enable_bariatric">
+                                <i class="fas fa-weight"></i> <strong>OBEZİTE CERRAHİSİ</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="bariatric_module" style="display: {{ 'block' if request.form.get('enable_bariatric') else 'none' }};">
+                        <div class="alert alert-light border mb-3">
+                            <small><i class="fas fa-info-circle"></i> Sleeve gastrektomi, gastrik bypass, gastrik balon</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Ameliyat Tipi</label>
+                                <select class="form-control" name="bariatric_type">
+                                    <option value="">Seçiniz...</option>
+                                    <option value="sleeve">Sleeve Gastrektomi (Tüp Mide)</option>
+                                    <option value="gastric_bypass">Gastrik Bypass</option>
+                                    <option value="gastric_balloon">Gastrik Balon</option>
+                                    <option value="gastric_band">Gastrik Bant</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Kilo (kg)</label>
+                                <input type="number" step="0.1" class="form-control" name="bariatric_weight" id="bariatric_weight" onchange="calculateBMI()" placeholder="80">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Boy (cm)</label>
+                                <input type="number" class="form-control" name="bariatric_height" id="bariatric_height" onchange="calculateBMI()" placeholder="170">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">BMI</label>
+                                <input type="text" class="form-control" id="bariatric_bmi" readonly placeholder="Otomatik">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Fiyat (€)</label>
+                                <input type="number" step="0.01" class="form-control" name="bariatric_price" placeholder="4500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- IVF Treatment Module -->
+            {% if app_settings.enable_ivf %}
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_ivf" name="enable_ivf" 
+                                   onchange="toggleModule('ivf')" {{ 'checked' if request.form.get('enable_ivf') }}>
+                            <label class="form-check-label" for="enable_ivf">
+                                <i class="fas fa-baby"></i> <strong>IVF (TÜP BEBEK)</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="ivf_module" style="display: {{ 'block' if request.form.get('enable_ivf') else 'none' }};">
+                        <div class="alert alert-light border mb-3">
+                            <small><i class="fas fa-info-circle"></i> Tüp bebek tedavisi, yumurta dondurma, donör yumurta</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tedavi Tipi</label>
+                                <select class="form-control" name="ivf_type">
+                                    <option value="">Seçiniz...</option>
+                                    <option value="ivf">IVF (Tüp Bebek)</option>
+                                    <option value="icsi">ICSI</option>
+                                    <option value="iui">IUI</option>
+                                    <option value="egg_freezing">Yumurta Dondurma</option>
+                                    <option value="donor_egg">Donör Yumurta</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Döngü No</label>
+                                <input type="number" class="form-control" name="ivf_cycle" value="1" min="1">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Kadın Yaşı</label>
+                                <input type="number" class="form-control" name="ivf_female_age" placeholder="32">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fiyat (€)</label>
+                                <input type="number" step="0.01" class="form-control" name="ivf_price" placeholder="3500">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notlar</label>
+                            <textarea class="form-control" name="ivf_notes" rows="2" placeholder="Protokol, ilaçlar, vs..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Check-Up Package Module -->
+            {% if app_settings.enable_checkup %}
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_checkup" name="enable_checkup" 
+                                   onchange="toggleModule('checkup')" {{ 'checked' if request.form.get('enable_checkup') }}>
+                            <label class="form-check-label" for="enable_checkup">
+                                <i class="fas fa-heartbeat"></i> <strong>CHECK-UP PAKETİ</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="checkup_module" style="display: {{ 'block' if request.form.get('enable_checkup') else 'none' }};">
+                        <div class="alert alert-light border mb-3">
+                            <small><i class="fas fa-info-circle"></i> Genel sağlık taraması paketleri - Her paket farklı testleri içerir</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Paket Tipi</label>
+                                <select class="form-control" name="checkup_package" id="checkup_package_select" onchange="updateCheckupDetails()">
+                                    <option value="">Seçiniz...</option>
+                                    <option value="bronze">Bronze Check-Up (Temel)</option>
+                                    <option value="silver">Silver Check-Up (Standart)</option>
+                                    <option value="gold">Gold Check-Up (Premium)</option>
+                                    <option value="platinum">Platinum Check-Up (VIP)</option>
+                                    <option value="diamond">Diamond Check-Up (Lüks)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fiyat (€)</label>
+                                <input type="number" step="0.01" class="form-control" name="checkup_price" id="checkup_price" placeholder="500">
+                            </div>
+                        </div>
+                        
+                        <!-- Package Details Display -->
+                        <div id="checkup_package_details" class="alert alert-info mb-3" style="display: none;">
+                            <h6><i class="fas fa-clipboard-list"></i> Paket İçeriği:</h6>
+                            <div id="checkup_details_content"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Dahil Edilen Testler</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkup_test_blood" id="checkup_test_blood">
+                                        <label class="form-check-label" for="checkup_test_blood">Kan Testi</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkup_test_xray" id="checkup_test_xray">
+                                        <label class="form-check-label" for="checkup_test_xray">Röntgen</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkup_test_ecg" id="checkup_test_ecg">
+                                        <label class="form-check-label" for="checkup_test_ecg">EKG</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkup_test_ultrasound" id="checkup_test_ultrasound">
+                                        <label class="form-check-label" for="checkup_test_ultrasound">Ultrason</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Submit Buttons -->
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.patient_detail', id=patient.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> İptal
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Hair Transplant Styles */
+.hair-chart-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.hair-diagram {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+}
+
+.hair-zone {
+    cursor: pointer;
+    transition: all 0.3s;
+    opacity: 0.7;
+}
+
+.hair-zone:hover {
+    opacity: 1;
+    filter: brightness(1.1);
+    transform: scale(1.02);
+}
+
+.hair-zone.selected {
+    opacity: 1;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.3));
+}
+
+.region-label {
+    font-size: 12px;
+    font-weight: bold;
+    pointer-events: none;
+    fill: #333;
+}
+
+.region-label.small-label {
+    font-size: 10px;
+}
+
+.hair-region-card {
+    border-left: 4px solid #00bcd4;
+    background: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.hair-region-card .region-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #00bcd4;
+}
+
+/* Eye Module Styles */
+.eye-selector {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px;
+}
+
+.eye-option {
+    cursor: pointer;
+    padding: 15px;
+    border: 3px solid transparent;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.eye-option:hover {
+    border-color: #1976d2;
+    background: #f8f9fa;
+    transform: scale(1.05);
+}
+
+.eye-option.selected {
+    border-color: #1976d2;
+    background: #e3f2fd;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.eye-label {
+    margin-top: 10px;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.procedure-card {
+    cursor: pointer;
+    padding: 20px;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.procedure-card:hover {
+    border-color: #0d6efd;
+    background: #f8f9fa;
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.procedure-card.selected {
+    border-color: #0d6efd;
+    background: #e7f3ff;
+    border-width: 3px;
+}
+
+.treatment-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.treatment-option {
+    cursor: pointer;
+    padding: 15px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.treatment-option:hover {
+    border-color: #198754;
+    background: #f8f9fa;
+}
+
+.treatment-option.selected {
+    border-color: #198754;
+    background: #d1e7dd;
+    border-width: 3px;
+}
+
+.treatment-option i {
+    font-size: 1.5rem;
+    color: #198754;
+}
+
+.eye-data-card {
+    background: #e7f3ff;
+    border-left: 4px solid #1976d2;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.eye-data-card strong {
+    color: #1976d2;
+}
+
+/* Dental Chart Styles */
+.dental-chart {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.tooth-box {
+    width: 50px;
+    height: 70px;
+    margin: 2px;
+    padding: 5px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.tooth-box:hover {
+    transform: scale(1.1);
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+}
+
+.tooth-box.selected {
+    background: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.tooth-box.has-treatment {
+    background: #ffc107;
+    border-color: #ff9800;
+}
+
+.tooth-icon {
+    font-size: 24px;
+    margin: 2px 0;
+}
+
+.tooth-number {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.dental-procedure-card {
+    border-left: 4px solid #007bff;
+    background: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.dental-procedure-card .tooth-label {
+    font-size: 18px;
+    font-weight: bold;
+    color: #007bff;
+}
+</style>
+
+<script>
+let dentalProcedures = {};
+let hairRegions = {};
+
+function toggleModule(module) {
+    const checkbox = document.getElementById('enable_' + module);
+    const moduleDiv = document.getElementById(module + '_module');
+    moduleDiv.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+// ========== HAIR TRANSPLANT FUNCTIONS ==========
+
+function selectHairRegion(regionId, regionName) {
+    // Check if region already selected
+    if (hairRegions[regionId]) {
+        if (confirm(`${regionName} için zaten greft sayısı girilmiş. Düzenlemek ister misiniz?`)) {
+            openHairModal(regionId, regionName, hairRegions[regionId]);
+        }
+    } else {
+        openHairModal(regionId, regionName);
+    }
+}
+
+function openHairModal(regionId, regionName, existingData = null) {
+    const grafts = existingData?.grafts || '';
+    const note = existingData?.note || '';
+    
+    const modal = `
+        <div class="modal fade" id="hairModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-user"></i> ${regionName} - Greft Bilgisi
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Ortalama Greft Sayıları:</strong><br>
+                                Ön Bölge: 1000-1500 | Orta Bölge: 800-1200 | Tepe: 1200-1800<br>
+                                Şakaklar: 300-500 (her biri) | Arka Tepe: 500-800
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Greft Sayısı *</label>
+                            <input type="number" id="modal_hair_grafts" class="form-control" 
+                                   value="${grafts}" placeholder="Örn: 1200" min="0" step="50">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Bölge Notu</label>
+                            <textarea id="modal_hair_note" class="form-control" rows="2" 
+                                      placeholder="Bu bölge için özel notlar...">${note}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        ${existingData ? '<button type="button" class="btn btn-danger me-auto" onclick="removeHairRegion(\'' + regionId + '\')">Kaldır</button>' : ''}
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="button" class="btn btn-info" onclick="saveHairRegion('${regionId}', '${regionName}')">Kaydet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById('hairModal');
+    if (existingModal) existingModal.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    const modalElement = new bootstrap.Modal(document.getElementById('hairModal'));
+    modalElement.show();
+}
+
+function saveHairRegion(regionId, regionName) {
+    const grafts = document.getElementById('modal_hair_grafts').value;
+    const note = document.getElementById('modal_hair_note').value;
+    
+    if (!grafts || grafts <= 0) {
+        alert('Lütfen geçerli bir greft sayısı giriniz');
+        return;
+    }
+    
+    hairRegions[regionId] = { name: regionName, grafts: parseInt(grafts), note };
+    updateHairRegionsList();
+    updateHairVisual(regionId);
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('hairModal'));
+    modal.hide();
+}
+
+function removeHairRegion(regionId) {
+    if (confirm('Bu bölgeyi kaldırmak istediğinize emin misiniz?')) {
+        delete hairRegions[regionId];
+        updateHairRegionsList();
+        updateHairVisual(regionId);
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('hairModal'));
+        modal.hide();
+    }
+}
+
+function updateHairVisual(regionId) {
+    const zone = document.getElementById('hair-' + regionId);
+    if (zone) {
+        if (hairRegions[regionId]) {
+            zone.classList.add('selected');
+        } else {
+            zone.classList.remove('selected');
+        }
+    }
+}
+
+function updateHairRegionsList() {
+    const container = document.getElementById('hair_regions');
+    container.innerHTML = '';
+    
+    const regions = Object.keys(hairRegions);
+    
+    if (regions.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-3">Henüz bölge seçilmedi. Yukarıdaki şemadan bölgeye tıklayarak greft sayısı ekleyin.</p>';
+        document.getElementById('hair_total_grafts').value = '';
+        return;
+    }
+    
+    let totalGrafts = 0;
+    
+    regions.forEach(regionId => {
+        const region = hairRegions[regionId];
+        totalGrafts += region.grafts;
+        
+        const card = document.createElement('div');
+        card.className = 'hair-region-card';
+        card.innerHTML = `
+            <input type="hidden" name="hair_region_id[]" value="${regionId}">
+            <input type="hidden" name="hair_region_name[]" value="${region.name}">
+            <input type="hidden" name="hair_region_grafts[]" value="${region.grafts}">
+            <input type="hidden" name="hair_region_note[]" value="${region.note}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="region-name">${region.name}</span>
+                    <span class="badge bg-info ms-2">${region.grafts} greft</span>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-info" 
+                            onclick="openHairModal('${regionId}', '${region.name}', ${JSON.stringify(region).replace(/"/g, '&quot;')})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="removeHairRegion('${regionId}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            ${region.note ? '<div class="mt-2 small text-muted"><i class="fas fa-sticky-note"></i> ' + region.note + '</div>' : ''}
+        `;
+        container.appendChild(card);
+    });
+    
+    // Update total grafts
+    document.getElementById('hair_total_grafts').value = totalGrafts;
+    
+    // Add summary
+    container.insertAdjacentHTML('beforeend', `
+        <div class="alert alert-success mt-3">
+            <strong>Toplam Bölge Sayısı:</strong> ${regions.length}<br>
+            <strong>Toplam Greft Sayısı:</strong> ${totalGrafts}
+        </div>
+    `);
+}
+
+// ========== EYE MODULE FUNCTIONS ==========
+
+let eyeData = {
+    OD: null,  // Right eye
+    OS: null   // Left eye
+};
+let currentEye = null;
+let selectedProcedure = null;
+let selectedTreatments = [];
+
+function selectEye(eyeCode, eyeName) {
+    currentEye = eyeCode;
+    
+    // Update visual selection
+    document.querySelectorAll('.eye-option').forEach(opt => opt.classList.remove('selected'));
+    document.getElementById('eye-selector-' + eyeCode.toLowerCase()).classList.add('selected');
+    
+    // Show refraction form
+    document.getElementById('eye_refraction_form').style.display = 'block';
+    document.getElementById('current_eye_label').textContent = eyeName;
+    
+    // Load existing data if available
+    if (eyeData[eyeCode]) {
+        document.getElementById('eye_sph_input').value = eyeData[eyeCode].sph || 0;
+        document.getElementById('eye_cyl_input').value = eyeData[eyeCode].cyl || 0;
+        document.getElementById('eye_axis_input').value = eyeData[eyeCode].axis || 0;
+        document.getElementById('eye_visual_acuity').value = eyeData[eyeCode].visual_acuity || '';
+        
+        updateRefractionValue('sph', eyeData[eyeCode].sph || 0);
+        updateRefractionValue('cyl', eyeData[eyeCode].cyl || 0);
+        updateRefractionValue('axis', eyeData[eyeCode].axis || 0);
+    } else {
+        // Reset form
+        document.getElementById('eye_sph_input').value = 0;
+        document.getElementById('eye_cyl_input').value = 0;
+        document.getElementById('eye_axis_input').value = 0;
+        document.getElementById('eye_visual_acuity').value = '';
+        
+        updateRefractionValue('sph', 0);
+        updateRefractionValue('cyl', 0);
+        updateRefractionValue('axis', 0);
+    }
+}
+
+function updateRefractionValue(type, value) {
+    const numValue = parseFloat(value);
+    let displayValue;
+    
+    if (type === 'axis') {
+        displayValue = numValue + '°';
+    } else {
+        displayValue = (numValue >= 0 ? '+' : '') + numValue.toFixed(2);
+    }
+    
+    document.getElementById(type + '_value_display').textContent = displayValue;
+}
+
+function saveEyeRefraction() {
+    if (!currentEye) {
+        alert('Lütfen önce bir göz seçin (Sağ veya Sol)');
+        return;
+    }
+    
+    const sph = parseFloat(document.getElementById('eye_sph_input').value);
+    const cyl = parseFloat(document.getElementById('eye_cyl_input').value);
+    const axis = parseInt(document.getElementById('eye_axis_input').value);
+    const visual_acuity = document.getElementById('eye_visual_acuity').value;
+    
+    eyeData[currentEye] = { sph, cyl, axis, visual_acuity };
+    
+    updateEyeDataSummary();
+    alert(`${currentEye === 'OD' ? 'Sağ' : 'Sol'} göz verileri kaydedildi!`);
+}
+
+function updateEyeDataSummary() {
+    const container = document.getElementById('eye_data_summary');
+    container.innerHTML = '';
+    
+    ['OD', 'OS'].forEach(eye => {
+        if (eyeData[eye]) {
+            const data = eyeData[eye];
+            const eyeName = eye === 'OD' ? 'Sağ Göz' : 'Sol Göz';
+            
+            const card = document.createElement('div');
+            card.className = 'eye-data-card';
+            card.innerHTML = `
+                <input type="hidden" name="eye_${eye.toLowerCase()}_sph" value="${data.sph}">
+                <input type="hidden" name="eye_${eye.toLowerCase()}_cyl" value="${data.cyl}">
+                <input type="hidden" name="eye_${eye.toLowerCase()}_axis" value="${data.axis}">
+                <input type="hidden" name="eye_${eye.toLowerCase()}_visual_acuity" value="${data.visual_acuity}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${eyeName} (${eye})</strong><br>
+                        <span class="badge bg-primary me-1">SPH: ${data.sph >= 0 ? '+' : ''}${data.sph.toFixed(2)}</span>
+                        <span class="badge bg-primary me-1">CYL: ${data.cyl >= 0 ? '+' : ''}${data.cyl.toFixed(2)}</span>
+                        <span class="badge bg-primary me-1">AXIS: ${data.axis}°</span>
+                        ${data.visual_acuity ? '<br><small>Görme: ' + data.visual_acuity + '</small>' : ''}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                            onclick="selectEye('${eye}', '${eyeName}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+    });
+}
+
+function selectProcedure(procedureName) {
+    selectedProcedure = procedureName;
+    
+    // Update visual selection
+    document.querySelectorAll('.procedure-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.target.closest('.procedure-card').classList.add('selected');
+    
+    // Update hidden input
+    document.getElementById('eye_procedure_input').value = procedureName;
+    
+    // Show selection
+    document.getElementById('selected_procedure_display').innerHTML = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> Seçili İşlem: <strong>${procedureName}</strong>
+        </div>
+    `;
+}
+
+function toggleTreatment(treatmentName) {
+    const index = selectedTreatments.indexOf(treatmentName);
+    const treatmentElements = Array.from(document.querySelectorAll('.treatment-option'));
+    const element = treatmentElements.find(el => el.textContent.trim().includes(treatmentName));
+    
+    if (index > -1) {
+        selectedTreatments.splice(index, 1);
+        element.classList.remove('selected');
+    } else {
+        selectedTreatments.push(treatmentName);
+        element.classList.add('selected');
+    }
+    
+    updateTreatmentsList();
+}
+
+function updateTreatmentsList() {
+    const container = document.getElementById('selected_treatments_list');
+    
+    if (selectedTreatments.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="alert alert-info">
+            <strong>Seçili Tedaviler (${selectedTreatments.length}):</strong><br>
+            ${selectedTreatments.map(t => `
+                <input type="hidden" name="eye_treatments" value="${t}">
+                <span class="badge bg-success me-1">${t}</span>
+            `).join('')}
+        </div>
+    `;
+}
+
+// ========== DENTAL FUNCTIONS ==========
+
+function selectTooth(toothNumber) {
+    const toothBox = document.querySelector(`.tooth-box[data-tooth="${toothNumber}"]`);
+    
+    // Check if tooth already has treatment
+    if (dentalProcedures[toothNumber]) {
+        // Edit existing treatment
+        if (confirm(`Diş ${toothNumber} için zaten bir tedavi var. Düzenlemek ister misiniz?`)) {
+            openToothModal(toothNumber, dentalProcedures[toothNumber]);
+        }
+    } else {
+        // Add new treatment
+        openToothModal(toothNumber);
+    }
+}
+
+function openToothModal(toothNumber, existingData = null) {
+    const treatment = existingData?.treatment || '';
+    const price = existingData?.price || '';
+    const note = existingData?.note || '';
+    
+    const modal = `
+        <div class="modal fade" id="toothModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-tooth"></i> Diş ${toothNumber} - Tedavi Ekle
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tedavi Türü *</label>
+                            <select id="modal_treatment" class="form-control">
+                                <option value="">Seçiniz...</option>
+                                <option value="Dolgu" ${treatment === 'Dolgu' ? 'selected' : ''}>Dolgu</option>
+                                <option value="Kanal Tedavisi" ${treatment === 'Kanal Tedavisi' ? 'selected' : ''}>Kanal Tedavisi</option>
+                                <option value="Kron" ${treatment === 'Kron' ? 'selected' : ''}>Kron</option>
+                                <option value="İmplant" ${treatment === 'İmplant' ? 'selected' : ''}>İmplant</option>
+                                <option value="Köprü" ${treatment === 'Köprü' ? 'selected' : ''}>Köprü</option>
+                                <option value="Veneer" ${treatment === 'Veneer' ? 'selected' : ''}>Veneer</option>
+                                <option value="Çekim" ${treatment === 'Çekim' ? 'selected' : ''}>Çekim</option>
+                                <option value="Temizlik" ${treatment === 'Temizlik' ? 'selected' : ''}>Temizlik</option>
+                                <option value="Beyazlatma" ${treatment === 'Beyazlatma' ? 'selected' : ''}>Beyazlatma</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-7 mb-3">
+                                <label class="form-label">Fiyat</label>
+                                <input type="number" id="modal_price" class="form-control" step="0.01" value="${price}" placeholder="Örn: 150.00">
+                            </div>
+                            <div class="col-md-5 mb-3">
+                                <label class="form-label">Para Birimi</label>
+                                <select id="modal_currency" class="form-control">
+                                    <option value="EUR" ${(existingData?.currency || 'EUR') === 'EUR' ? 'selected' : ''}>EUR (€)</option>
+                                    <option value="USD" ${(existingData?.currency || 'EUR') === 'USD' ? 'selected' : ''}>USD ($)</option>
+                                    <option value="TRY" ${(existingData?.currency || 'EUR') === 'TRY' ? 'selected' : ''}>TRY (₺)</option>
+                                    <option value="GBP" ${(existingData?.currency || 'EUR') === 'GBP' ? 'selected' : ''}>GBP (£)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Not</label>
+                            <textarea id="modal_note" class="form-control" rows="2" placeholder="İlave notlar...">${note}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        ${existingData ? '<button type="button" class="btn btn-danger me-auto" onclick="removeTreatment(' + toothNumber + ')">Sil</button>' : ''}
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="button" class="btn btn-primary" onclick="saveTreatment(${toothNumber})">Kaydet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('toothModal');
+    if (existingModal) existingModal.remove();
+    
+    // Add and show modal
+    document.body.insertAdjacentHTML('beforeend', modal);
+    const modalElement = new bootstrap.Modal(document.getElementById('toothModal'));
+    modalElement.show();
+}
+
+function saveTreatment(toothNumber) {
+    const treatment = document.getElementById('modal_treatment').value;
+    const price = document.getElementById('modal_price').value;
+    const currency = document.getElementById('modal_currency').value;
+    const note = document.getElementById('modal_note').value;
+    
+    if (!treatment) {
+        alert('Lütfen tedavi türü seçiniz');
+        return;
+    }
+    
+    dentalProcedures[toothNumber] = { treatment, price, currency, note };
+    updateDentalList();
+    updateToothVisual(toothNumber);
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('toothModal'));
+    modal.hide();
+}
+
+function removeTreatment(toothNumber) {
+    if (confirm(`Diş ${toothNumber} tedavisini silmek istediğinize emin misiniz?`)) {
+        delete dentalProcedures[toothNumber];
+        updateDentalList();
+        updateToothVisual(toothNumber);
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('toothModal'));
+        modal.hide();
+    }
+}
+
+function updateToothVisual(toothNumber) {
+    const toothBox = document.querySelector(`.tooth-box[data-tooth="${toothNumber}"]`);
+    if (dentalProcedures[toothNumber]) {
+        toothBox.classList.add('has-treatment');
+    } else {
+        toothBox.classList.remove('has-treatment');
+    }
+}
+
+function updateDentalList() {
+    const container = document.getElementById('dental_procedures');
+    container.innerHTML = '';
+    
+    const teeth = Object.keys(dentalProcedures).sort((a, b) => a - b);
+    
+    if (teeth.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-3">Henüz diş tedavisi eklenmedi. Yukarıdaki şemadan dişe tıklayarak tedavi ekleyin.</p>';
+        return;
+    }
+    
+    teeth.forEach(toothNumber => {
+        const proc = dentalProcedures[toothNumber];
+        const card = document.createElement('div');
+        card.className = 'dental-procedure-card';
+        const currencySymbol = {'EUR': '€', 'USD': '$', 'TRY': '₺', 'GBP': '£'}[proc.currency || 'EUR'];
+        card.innerHTML = `
+            <input type="hidden" name="dental_tooth[]" value="${toothNumber}">
+            <input type="hidden" name="dental_treatment[]" value="${proc.treatment}">
+            <input type="hidden" name="dental_price[]" value="${proc.price}">
+            <input type="hidden" name="dental_currency[]" value="${proc.currency || 'EUR'}">
+            <input type="hidden" name="dental_note[]" value="${proc.note}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="tooth-label">Diş ${toothNumber}</span>
+                    <span class="badge bg-primary ms-2">${proc.treatment}</span>
+                    ${proc.price ? '<span class="badge bg-success ms-2">' + proc.price + ' ' + currencySymbol + '</span>' : ''}
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openToothModal(${toothNumber}, ${JSON.stringify(proc).replace(/"/g, '&quot;')})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTreatment(${toothNumber})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            ${proc.note ? '<div class="mt-2 small text-muted">' + proc.note + '</div>' : ''}
+        `;
+        container.appendChild(card);
+    });
+    
+    // Add total
+    const total = teeth.reduce((sum, tooth) => {
+        const price = parseFloat(dentalProcedures[tooth].price) || 0;
+        return sum + price;
+    }, 0);
+    
+    if (total > 0) {
+        container.insertAdjacentHTML('beforeend', `
+            <div class="alert alert-info mt-3">
+                <strong>Toplam Tedavi Sayısı:</strong> ${teeth.length} diş<br>
+                <strong>Toplam Fiyat:</strong> ${total.toFixed(2)} €
+            </div>
+        `);
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateDentalList();
+});
+
+// BMI Calculator for Bariatric Surgery
+function calculateBMI() {
+    const weight = parseFloat(document.getElementById('bariatric_weight').value);
+    const height = parseFloat(document.getElementById('bariatric_height').value);
+    
+    if (weight > 0 && height > 0) {
+        const heightInMeters = height / 100;
+        const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+        document.getElementById('bariatric_bmi').value = bmi;
+    } else {
+        document.getElementById('bariatric_bmi').value = '';
+    }
+}
+
+// Check-up Package Details
+function updateCheckupDetails() {
+    const packageType = document.getElementById('checkup_package_select').value;
+    const detailsDiv = document.getElementById('checkup_package_details');
+    const contentDiv = document.getElementById('checkup_details_content');
+    const priceInput = document.getElementById('checkup_price');
+    
+    const packages = {
+        'bronze': {
+            name: 'Bronze Check-Up (Temel)',
+            price: 250,
+            tests: ['Tam Kan Sayımı', 'Açlık Kan Şekeri', 'Lipid Profili', 'Karaciğer Fonksiyon Testleri', 'Böbrek Fonksiyon Testleri', 'Tam İdrar Tahlili', 'EKG', 'Akciğer Grafisi']
+        },
+        'silver': {
+            name: 'Silver Check-Up (Standart)',
+            price: 450,
+            tests: ['Bronze paketteki tüm testler', 'Tiroid Fonksiyon Testleri (TSH, fT3, fT4)', 'Vitamin D', 'Vitamin B12', 'Ferritin', 'CRP', 'Sedimentasyon', 'HbA1c', 'USG Abdomen (Üst Batın)', 'Dahiliye Muayenesi']
+        },
+        'gold': {
+            name: 'Gold Check-Up (Premium)',
+            price: 750,
+            tests: ['Silver paketteki tüm testler', 'Tümör Belirteçleri (CEA, CA 19-9, PSA erkek/CA 125 kadın)', 'Hepatit Markerleri (HBsAg, Anti-HCV)', 'Elektrolit Paneli', 'Efor Testi', 'Ekokardiyografi', 'Göğüs Hastalıkları Muayenesi', 'Kardiyoloji Muayenesi']
+        },
+        'platinum': {
+            name: 'Platinum Check-Up (VIP)',
+            price: 1200,
+            tests: ['Gold paketteki tüm testler', 'MR Beyin', 'BT Toraks', 'Karotis Doppler USG', 'Gastroenteroloji Muayenesi', 'Endokrinoloji Muayenesi', 'Nöroloji Muayenesi', 'Hemogram Detaylı', 'Hormon Paneli', 'Beslenme Danışmanlığı']
+        },
+        'diamond': {
+            name: 'Diamond Check-Up (Lüks)',
+            price: 2000,
+            tests: ['Platinum paketteki tüm testler', 'PET-CT', 'Tam Abdomen MR', 'Kalp MR', 'Genetik Danışmanlık', 'Onkoloji Konsültasyonu', 'Üroloji/Kadın Hastalıkları Muayenesi', 'Dermatoloji Muayenesi', 'KBB Muayenesi', 'Göz Muayenesi', 'Diş Muayenesi', 'VIP Transfer', 'VIP Otel Konaklama']
+        }
+    };
+    
+    if (packageType && packages[packageType]) {
+        const pkg = packages[packageType];
+        priceInput.value = pkg.price;
+        
+        let testsHtml = '<ul class="mb-0">';
+        pkg.tests.forEach(test => {
+            testsHtml += `<li>${test}</li>`;
+        });
+        testsHtml += '</ul>';
+        
+        contentDiv.innerHTML = testsHtml;
+        detailsDiv.style.display = 'block';
+    } else {
+        detailsDiv.style.display = 'none';
+        priceInput.value = '';
+    }
+}
+</script>
+{% endblock %}

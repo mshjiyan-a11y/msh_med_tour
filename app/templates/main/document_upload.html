@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Doküman Yükle{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header">
+        <h4>Yeni Doküman Yükle</h4>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Dosya <span class="text-danger">*</span></label>
+            <input type="file" name="file" class="form-control" required>
+            <div class="form-text">Maksimum 16MB. Desteklenen: PDF, JPG, PNG, DOCX, vb.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Başlık <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" required placeholder="Dosya adından otomatik doldurulur">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Açıklama</label>
+            <textarea name="description" class="form-control" rows="2"></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Doküman Türü</label>
+              <select name="document_type" class="form-select">
+                <option value="other">Diğer</option>
+                <option value="medical_report">Tıbbi Rapor</option>
+                <option value="lab_result">Lab Sonucu</option>
+                <option value="consent_form">Onay Formu</option>
+                <option value="image">Görüntü</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Hasta</label>
+              <select name="patient_id" class="form-select">
+                <option value="">Seçiniz (opsiyonel)</option>
+                {% for p in patients %}
+                  <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Muayene ID (Opsiyonel)</label>
+            <input type="number" name="encounter_id" class="form-control" placeholder="İlgili muayene ID">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Etiketler</label>
+            <input type="text" name="tags" class="form-control" placeholder="virgülle ayırın: röntgen, kan testi">
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" name="is_public" class="form-check-input" id="isPublic">
+            <label class="form-check-label" for="isPublic">
+              Herkese Açık (Hasta tarafından görülebilir)
+            </label>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="{{ url_for('main.documents') }}" class="btn btn-secondary">İptal</a>
+            <button type="submit" class="btn btn-primary">Yükle</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

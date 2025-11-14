@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Lead Detay - {{ lead.first_name }} {{ lead.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3">Lead Detayı</h2>
+            <p class="text-muted">{{ lead.first_name }} {{ lead.last_name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if not lead.is_converted %}
+            <a href="{{ url_for('leads.convert_to_patient', id=lead.id) }}" class="btn btn-success">
+                <i class="fas fa-user-check"></i> Hastaya Çevir
+            </a>
+            {% endif %}
+            <a href="{{ url_for('leads.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Geri
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Lead Info Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Lead Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="badge bg-{{ 'primary' if lead.source == 'facebook' else 'success' if lead.source == 'website' else 'info' }}">
+                            {{ lead.source }}
+                        </span>
+                        <span class="badge bg-{{ 'success' if lead.status == 'converted' else 'warning' if lead.status == 'qualified' else 'secondary' }}">
+                            {{ lead.status }}
+                        </span>
+                        {% if lead.priority %}
+                        <span class="badge bg-danger">Yüksek Öncelik</span>
+                        {% endif %}
+                    </div>
+
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Ad Soyad:</th>
+                            <td>{{ lead.first_name }} {{ lead.last_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Telefon:</th>
+                            <td>{{ lead.phone }}</td>
+                        </tr>
+                        <tr>
+                            <th>E-posta:</th>
+                            <td>{{ lead.email or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>İlgilendiği Hizmet:</th>
+                            <td>{{ lead.interested_service or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Oluşturulma:</th>
+                            <td>{{ lead.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                        </tr>
+                        {% if lead.is_converted %}
+                        <tr>
+                            <th>Dönüştürüldü:</th>
+                            <td>
+                                <a href="{{ url_for('main.patient_detail', id=lead.converted_to_patient_id) }}">
+                                    Hasta #{{ lead.converted_to_patient_id }}
+                                </a><br>
+                                <small class="text-muted">{{ lead.converted_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+
+                    {% if lead.message %}
+                    <hr>
+                    <h6>Mesaj:</h6>
+                    <p class="text-muted small">{{ lead.message }}</p>
+                    {% endif %}
+
+                    {% if lead.raw_data %}
+                    <hr>
+                    <h6>Ham Veri:</h6>
+                    <details>
+                        <summary class="text-muted small" style="cursor: pointer;">JSON verisini göster</summary>
+                        <pre class="small mt-2">{{ lead.raw_data }}</pre>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Status Update -->
+            {% if not lead.is_converted %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Durumu Güncelle</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('leads.update_status', id=lead.id) }}">
+                        <select name="status" class="form-select mb-2">
+                            <option value="new" {% if lead.status == 'new' %}selected{% endif %}>Yeni</option>
+                            <option value="contacted" {% if lead.status == 'contacted' %}selected{% endif %}>İletişimde</option>
+                            <option value="qualified" {% if lead.status == 'qualified' %}selected{% endif %}>Nitelikli</option>
+                            <option value="rejected" {% if lead.status == 'rejected' %}selected{% endif %}>Reddedildi</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary w-100">Güncelle</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Notes / Communication History -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">İletişim Geçmişi</h5>
+                </div>
+                <div class="card-body">
+                    {% if lead.notes %}
+                    <div class="list-group mb-3">
+                        {% for note in lead.notes|sort(attribute='created_at', reverse=true) %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ note.created_by_user.username if note.created_by_user else 'Sistem' }}</h6>
+                                <small>{{ note.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">{{ note.note }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">Henüz not eklenmemiş</p>
+                    {% endif %}
+
+                    <!-- Add Note Form -->
+                    {% if not lead.is_converted %}
+                    <form method="POST" action="{{ url_for('leads.add_note', id=lead.id) }}">
+                        <div class="mb-3">
+                            <label class="form-label">Yeni Not Ekle</label>
+                            <textarea name="note" class="form-control" rows="3" 
+                                      placeholder="İletişim detayları, randevu notları vb..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Not Ekle
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

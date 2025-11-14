@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}API Keys{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('leads.index') }}">Lead'ler</a></li>
+                    <li class="breadcrumb-item active">API Keys</li>
+                </ol>
+            </nav>
+            <h2 class="h3"><i class="fas fa-key"></i> API Keys</h2>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                API key'lerinizi görebilirsiniz. Yeni API key oluşturmak veya ayarları değiştirmek için sistem yöneticinizle iletişime geçin.
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Aktif API Keys</h5>
+                </div>
+                <div class="card-body">
+                    {% if api_keys %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>İsim</th>
+                                    <th>API Key</th>
+                                    <th>İzinli Kaynaklar</th>
+                                    <th>Kullanım</th>
+                                    <th>Son Kullanım</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key in api_keys %}
+                                <tr>
+                                    <td><strong>{{ key.key_name }}</strong></td>
+                                    <td>
+                                        <code class="small">{{ key.api_key[:20] }}...</code>
+                                        <button class="btn btn-sm btn-link" type="button"
+                                                onclick="copyToClipboard('{{ key.api_key }}', this)"
+                                                title="Kopyala">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        {% for source in key.allowed_sources.split(',') %}
+                                        <span class="badge bg-secondary">{{ source }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ key.usage_count }}</strong> kez
+                                    </td>
+                                    <td>
+                                        {% if key.last_used_at %}
+                                        {{ key.last_used_at.strftime('%d.%m.%Y %H:%M') }}
+                                        {% else %}
+                                        <span class="text-muted">Henüz kullanılmadı</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if key.is_active %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6>Kullanım Örnekleri:</h6>
+                        
+                        <div class="card bg-light mb-3">
+                            <div class="card-header">
+                                <strong>Web Sitesi Formu (JavaScript)</strong>
+                            </div>
+                            <div class="card-body">
+                                <pre class="mb-0"><code>fetch('{{ request.url_root }}api/v1/leads', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': 'YOUR_API_KEY_HERE',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    source: 'website',
+    first_name: 'Ahmet',
+    last_name: 'Yılmaz',
+    email: 'ahmet@example.com',
+    phone: '+90 555 123 4567',
+    interested_service: 'hair',
+    message: 'Saç ekimi hakkında bilgi almak istiyorum'
+  })
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Lead oluşturuldu:', data);
+  alert('Başvurunuz alındı!');
+})
+.catch(error => console.error('Hata:', error));</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <strong>cURL Örneği</strong>
+                            </div>
+                            <div class="card-body">
+                                <pre class="mb-0"><code>curl -X POST {{ request.url_root }}api/v1/leads \
+  -H "X-API-Key: YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "website",
+    "first_name": "Ahmet",
+    "last_name": "Yılmaz",
+    "email": "ahmet@example.com",
+    "phone": "+90 555 123 4567",
+    "interested_service": "hair"
+  }'</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-key fa-3x mb-3"></i>
+                        <p>Henüz API key oluşturulmamış.</p>
+                        <p class="small">Sistem yöneticinizden API key oluşturmasını isteyin.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <a href="{{ url_for('leads.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Lead'lere Dön
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text, button) {
+    navigator.clipboard.writeText(text).then(function() {
+        const icon = button.querySelector('i');
+        icon.classList.remove('fa-copy');
+        icon.classList.add('fa-check');
+        button.classList.add('text-success');
+        
+        setTimeout(function() {
+            icon.classList.remove('fa-check');
+            icon.classList.add('fa-copy');
+            button.classList.remove('text-success');
+        }, 2000);
+    }).catch(function(err) {
+        alert('Kopyalama başarısız: ' + err);
+    });
+}
+</script>
+{% endblock %}

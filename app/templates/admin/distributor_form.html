@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Yeni Distribütör' if not distributor else 'Distribütör Düzenle' }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ 'Yeni Distribütör' if not distributor else 'Distribütör Düzenle' }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() if form }}
+                        
+                        <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-hospital"></i> Temel Bilgiler</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hastane/Klinik Adı *</label>
+                                <input type="text" name="name" class="form-control" 
+                                       value="{{ distributor.name if distributor else '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">İletişim Kişisi</label>
+                                <input type="text" name="contact_name" class="form-control" 
+                                       value="{{ distributor.contact_name if distributor else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">E-posta *</label>
+                                <input type="email" name="email" class="form-control" 
+                                       value="{{ distributor.email if distributor else '' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Telefon</label>
+                                <input type="text" name="phone" class="form-control" 
+                                       value="{{ distributor.phone if distributor else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">WhatsApp</label>
+                                <input type="text" name="whatsapp" class="form-control" placeholder="+90 555 123 4567"
+                                       value="{{ distributor.whatsapp if distributor else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Adres</label>
+                                {{ form.address(class="form-control", rows="2") if form else '' }}
+                                <textarea name="address" class="form-control" rows="2">{{ distributor.address if distributor else '' }}</textarea>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Şehir</label>
+                                {{ form.city(class="form-control") if form else '' }}
+                                <input type="text" name="city" class="form-control" 
+                                       value="{{ distributor.city if distributor else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Ülke</label>
+                                {{ form.country(class="form-control") if form else '' }}
+                                <input type="text" name="country" class="form-control" 
+                                       value="{{ distributor.country if distributor else '' }}">
+                            </div>
+                        </div>
+
+                        <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-share-alt"></i> Web & Sosyal Medya</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-globe"></i> Website</label>
+                                {{ form.website(class="form-control", placeholder="https://www.example.com") if form else '' }}
+                                <input type="url" name="website" class="form-control" 
+                                       value="{{ distributor.website if distributor else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fab fa-facebook"></i> Facebook</label>
+                                {{ form.facebook(class="form-control", placeholder="https://facebook.com/...") if form else '' }}
+                                <input type="url" name="facebook" class="form-control" 
+                                       value="{{ distributor.facebook if distributor else '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><i class="fab fa-instagram"></i> Instagram</label>
+                                {{ form.instagram(class="form-control", placeholder="@username") if form else '' }}
+                                <input type="text" name="instagram" class="form-control" 
+                                       value="{{ distributor.instagram if distributor else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><i class="fab fa-twitter"></i> Twitter</label>
+                                {{ form.twitter(class="form-control", placeholder="@username") if form else '' }}
+                                <input type="text" name="twitter" class="form-control" 
+                                       value="{{ distributor.twitter if distributor else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><i class="fab fa-linkedin"></i> LinkedIn</label>
+                                {{ form.linkedin(class="form-control", placeholder="company-name") if form else '' }}
+                                <input type="text" name="linkedin" class="form-control" 
+                                       value="{{ distributor.linkedin if distributor else '' }}">
+                            </div>
+                        </div>
+
+                        <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-file-contract"></i> Yasal Bilgiler</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hastane Ruhsat No</label>
+                                {{ form.hospital_license(class="form-control") if form else '' }}
+                                <input type="text" name="hospital_license" class="form-control" 
+                                       value="{{ distributor.hospital_license if distributor else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vergi Numarası</label>
+                                {{ form.tax_number(class="form-control") if form else '' }}
+                                <input type="text" name="tax_number" class="form-control" 
+                                       value="{{ distributor.tax_number if distributor else '' }}">
+                            </div>
+                        </div>
+
+                        <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-palette"></i> Branding & PDF</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Marka Rengi</label>
+                                {{ form.color_hex(class="form-control", type="color") if form else '' }}
+                                <input type="color" name="color_hex" class="form-control" 
+                                       value="{{ distributor.color_hex if distributor else '#7a001d' }}">
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Logo Yükle</label>
+                                {{ form.logo(class="form-control") if form else '' }}
+                                <input type="file" name="logo" class="form-control" accept="image/*">
+                                {% if distributor and distributor.logo_path %}
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-check-circle text-success"></i> Mevcut: {{ distributor.logo_path }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">PDF Alt Yazı (Footer)</label>
+                            {{ form.pdf_footer_text(class="form-control", rows="2", 
+                                placeholder="Bu metin PDF raporlarının alt kısmında görünecektir...") if form else '' }}
+                            <textarea name="pdf_footer_text" class="form-control" rows="2" 
+                                      placeholder="Bu metin PDF raporlarının alt kısmında görünecektir...">{{ distributor.pdf_footer_text if distributor else '' }}</textarea>
+                        </div>
+
+                        <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-cogs"></i> Modül Ayarları</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="enable_hair" class="form-check-input" id="enable_hair"
+                                           {{ 'checked' if distributor and distributor.enable_hair else '' }}>
+                                    <label class="form-check-label" for="enable_hair">
+                                        <i class="fas fa-user"></i> Saç Ekimi Modülü
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="enable_teeth" class="form-check-input" id="enable_teeth"
+                                           {{ 'checked' if distributor and distributor.enable_teeth else '' }}>
+                                    <label class="form-check-label" for="enable_teeth">
+                                        <i class="fas fa-tooth"></i> Diş Tedavisi Modülü
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="enable_eye" class="form-check-input" id="enable_eye"
+                                           {{ 'checked' if distributor and distributor.enable_eye else '' }}>
+                                    <label class="form-check-label" for="enable_eye">
+                                        <i class="fas fa-eye"></i> Göz Ameliyatı Modülü
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="enable_aesthetic" class="form-check-input" id="enable_aesthetic"
+                                           {{ 'checked' if distributor and distributor.enable_aesthetic else '' }}>
+                                    <label class="form-check-label" for="enable_aesthetic">
+                                        <i class="fas fa-cut"></i> Estetik Cerrahi Modülü
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="enable_bariatric" class="form-check-input" id="enable_bariatric"
+                                           {{ 'checked' if distributor and distributor.enable_bariatric else '' }}>
+                                    <label class="form-check-label" for="enable_bariatric">
+                                        <i class="fas fa-weight"></i> Bariatrik Cerrahi Modülü
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="enable_ivf" class="form-check-input" id="enable_ivf"
+                                           {{ 'checked' if distributor and distributor.enable_ivf else '' }}>
+                                    <label class="form-check-label" for="enable_ivf">
+                                        <i class="fas fa-baby"></i> IVF (Tüp Bebek) Modülü
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="enable_checkup" class="form-check-input" id="enable_checkup"
+                                           {{ 'checked' if distributor and distributor.enable_checkup else '' }}
+                                    <label class="form-check-label" for="enable_checkup">
+                                        <i class="fas fa-heartbeat"></i> Check-Up Paketleri Modülü
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-euro-sign"></i> Fiyatlandırma Yapılandırması</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Greft Başı Fiyat</label>
+                                {{ form.price_per_graft(class="form-control", step="0.01", placeholder="0.00") if form else '' }}
+                                <input type="number" name="price_per_graft" class="form-control" step="0.01"
+                                       value="{{ distributor.price_per_graft if distributor else 0 }}" placeholder="0.00">
+                                <small class="text-muted">Saç ekimi için greft başına ücret</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Para Birimi</label>
+                                {{ form.currency(class="form-select") if form else '' }}
+                                <select name="currency" class="form-select">
+                                    <option value="EUR" {{ 'selected' if distributor and distributor.currency == 'EUR' else '' }}>EUR - €</option>
+                                    <option value="USD" {{ 'selected' if distributor and distributor.currency == 'USD' else '' }}>USD - $</option>
+                                    <option value="TRY" {{ 'selected' if distributor and distributor.currency == 'TRY' else '' }}>TRY - ₺</option>
+                                    <option value="GBP" {{ 'selected' if distributor and distributor.currency == 'GBP' else '' }}>GBP - £</option>
+                                </select>
+                                <small class="text-muted">Fiyat tekliflerinde kullanılacak para birimi</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_active(class="form-check-input", id="is_active") if form else '' }}
+                                <input type="checkbox" name="is_active" class="form-check-input" id="is_active"
+                                       {{ 'checked' if not distributor or distributor.is_active else '' }}>
+                                <label class="form-check-label" for="is_active">
+                                    <strong>Aktif</strong> (Pasif edilirse bu distribütör sisteme giriş yapamaz)
+                                </label>
+                            </div>
+                        </div>
+
+                        {% if not distributor %}
+                        <hr>
+                        <h6>Yönetici Kullanıcı Bilgileri</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Kullanıcı Adı *</label>
+                                <input type="text" name="admin_username" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">E-posta</label>
+                                <input type="email" name="admin_email" class="form-control">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Şifre *</label>
+                            <input type="password" name="admin_password" class="form-control" required>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.distributors') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> İptal
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

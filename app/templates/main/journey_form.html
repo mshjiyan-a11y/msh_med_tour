@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}{% if journey %}Yolculuk Düzenle{% else %}Yeni Yolculuk{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card card-modern">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-route"></i> 
+                        {% if journey %}{{ journey.journey_code }} - Düzenle{% else %}Yeni Yolculuk Oluştur{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Patient Selection (only for new journey) -->
+                        {% if not journey %}
+                        <div class="mb-3">
+                            <label class="form-label required">Hasta</label>
+                            <select name="patient_id" class="form-select" required {% if patient %}disabled{% endif %}>
+                                {% if patient %}
+                                <option value="{{ patient.id }}" selected>{{ patient.full_name }} ({{ patient.patient_id }})</option>
+                                {% else %}
+                                <option value="">Hasta seçin...</option>
+                                {% for p in patients %}
+                                <option value="{{ p.id }}">{{ p.full_name }} ({{ p.patient_id }})</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                            {% if patient %}
+                            <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Date Range -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label required">Varış Tarihi</label>
+                                <input type="datetime-local" name="arrival_date" class="form-control" 
+                                    value="{% if journey %}{{ journey.arrival_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">Dönüş Tarihi</label>
+                                <input type="datetime-local" name="departure_date" class="form-control"
+                                    value="{% if journey %}{{ journey.departure_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" required>
+                            </div>
+                        </div>
+
+                        <!-- Purpose -->
+                        <div class="mb-3">
+                            <label class="form-label">Amaç / Tedavi Türü</label>
+                            <input type="text" name="purpose" class="form-control" 
+                                placeholder="örn: Saç ekimi tedavisi, Göz ameliyatı"
+                                value="{% if journey %}{{ journey.purpose }}{% endif %}">
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-3">
+                            <label class="form-label required">Durum</label>
+                            <select name="status" class="form-select" required>
+                                <option value="planned" {% if journey and journey.status == 'planned' %}selected{% endif %}>Planlanan</option>
+                                <option value="confirmed" {% if journey and journey.status == 'confirmed' %}selected{% endif %}>Onaylandı</option>
+                                <option value="in_progress" {% if journey and journey.status == 'in_progress' %}selected{% endif %}>Devam Ediyor</option>
+                                <option value="completed" {% if journey and journey.status == 'completed' %}selected{% endif %}>Tamamlandı</option>
+                                <option value="cancelled" {% if journey and journey.status == 'cancelled' %}selected{% endif %}>İptal Edildi</option>
+                            </select>
+                        </div>
+
+                        <!-- Coordinator -->
+                        <div class="mb-3">
+                            <label class="form-label">Koordinatör</label>
+                            <select name="coordinator_id" class="form-select">
+                                <option value="">Koordinatör atama...</option>
+                                {% for user in coordinators %}
+                                <option value="{{ user.id }}" {% if journey and journey.coordinator_id == user.id %}selected{% endif %}>
+                                    {{ user.username }} {% if user.email %}({{ user.email }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Yolculuğu takip edecek sorumlu kişi</small>
+                        </div>
+
+                        <!-- Emergency Contact -->
+                        <div class="mb-3">
+                            <label class="form-label">Acil Durum İletişim</label>
+                            <input type="text" name="emergency_contact" class="form-control" 
+                                placeholder="İsim ve telefon numarası"
+                                value="{% if journey %}{{ journey.emergency_contact }}{% endif %}">
+                        </div>
+
+                        <!-- Special Requirements -->
+                        <div class="mb-3">
+                            <label class="form-label">Özel Gereksinimler</label>
+                            <textarea name="special_requirements" class="form-control" rows="3" 
+                                placeholder="Diyet kısıtlamaları, engelli erişimi, tercüman ihtiyacı vb.">{% if journey %}{{ journey.special_requirements }}{% endif %}</textarea>
+                        </div>
+
+                        <!-- Auto-create Steps (only for new journey) -->
+                        {% if not journey %}
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="auto_create_steps" id="autoSteps" checked>
+                                <label class="form-check-label" for="autoSteps">
+                                    <strong>Otomatik adımlar oluştur</strong>
+                                    <br><small class="text-muted">
+                                        Standart yolculuk adımlarını otomatik oluşturur 
+                                        (Uçuş varışı, Transfer, Otel check-in, Hastane ziyareti, vb.)
+                                    </small>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label class="form-label">Notlar</label>
+                            <textarea name="notes" class="form-control" rows="4" 
+                                placeholder="Yolculukla ilgili önemli notlar...">{% if journey %}{{ journey.notes }}{% endif %}</textarea>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if journey %}{{ url_for('journey.journey_detail', id=journey.id) }}{% elif patient %}{{ url_for('journey.patient_journeys', patient_id=patient.id) }}{% else %}{{ url_for('main.dashboard') }}{% endif %}" 
+                                class="btn btn-secondary">
+                                <i class="fas fa-times"></i> İptal
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {% if journey %}Güncelle{% else %}Oluştur{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card card-modern mt-3 bg-light">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle"></i> Yolculuk Yönetimi Hakkında</h6>
+                    <ul class="mb-0 small">
+                        <li>Otomatik adımlar, standart 7 adımlık süreç oluşturur (uçuş, transfer, konaklama, tedavi)</li>
+                        <li>Her adımın durumu ayrı ayrı takip edilir (beklemede → onaylı → devam ediyor → tamamlandı)</li>
+                        <li>Koordinatör atandığında bildirim gönderilir</li>
+                        <li>Yolculuk detay sayfasından uçuş ve transfer bilgileri eklenebilir</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

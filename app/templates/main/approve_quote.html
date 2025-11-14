@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Teklif Onayı{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-lg">
+        <div class="card-header {% if approval.status == 'pending' %}bg-primary{% elif approval.status == 'approved' %}bg-success{% else %}bg-danger{% endif %} text-white text-center">
+          <h4 class="mb-0">Muayene Teklifi Onayı</h4>
+        </div>
+        <div class="card-body">
+          {% if approval.status == 'pending' %}
+            <p class="lead">Lütfen aşağıdaki teklifi inceleyin ve onaylayın veya reddedin.</p>
+            <hr>
+            <h5>Muayene Bilgileri</h5>
+            <p><strong>Hasta:</strong> {{ encounter.patient.full_name }}</p>
+            <p><strong>Tarih:</strong> {{ encounter.date.strftime('%d.%m.%Y') if encounter.date else '-' }}</p>
+            <p><strong>Not:</strong> {{ encounter.note or 'Yok' }}</p>
+            <hr>
+            <form method="POST">
+              <div class="mb-3">
+                <label for="name" class="form-label">Ad Soyad</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label">E-posta</label>
+                <input type="email" class="form-control" id="email" name="email">
+              </div>
+              <div class="mb-3">
+                <label for="notes" class="form-label">Notlar (isteğe bağlı)</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+              </div>
+              <div class="d-grid gap-2">
+                <button type="submit" name="action" value="approve" class="btn btn-success btn-lg">
+                  <i class="fas fa-check-circle"></i> Teklifi Onayla
+                </button>
+                <button type="submit" name="action" value="reject" class="btn btn-outline-danger">
+                  <i class="fas fa-times-circle"></i> Reddet
+                </button>
+              </div>
+            </form>
+          {% elif approval.status == 'approved' %}
+            <div class="alert alert-success text-center" role="alert">
+              <i class="fas fa-check-circle fa-3x mb-3"></i>
+              <h4 class="alert-heading">Teklif Onaylandı!</h4>
+              <p>Onaylayan: <strong>{{ approval.approved_by_name }}</strong></p>
+              <p class="mb-0">Onay Tarihi: {{ approval.approved_at.strftime('%d.%m.%Y %H:%M') }}</p>
+            </div>
+          {% else %}
+            <div class="alert alert-danger text-center" role="alert">
+              <i class="fas fa-times-circle fa-3x mb-3"></i>
+              <h4 class="alert-heading">Teklif Reddedildi</h4>
+              <p>Reddeden: <strong>{{ approval.approved_by_name }}</strong></p>
+              <p class="mb-0">Tarih: {{ approval.approved_at.strftime('%d.%m.%Y %H:%M') }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

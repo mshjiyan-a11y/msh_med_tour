@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Randevular - MSH Med Tour{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3">Tüm Muayeneler / Randevular</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('main.export_appointments') }}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Excel İndir
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('main.appointments') }}">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="fas fa-info-circle"></i> Durum</label>
+                        <select name="status" class="form-select">
+                            <option value="">Tümü</option>
+                            <option value="completed" {% if status == 'completed' %}selected{% endif %}>Tamamlandı</option>
+                            <option value="pending" {% if status == 'pending' %}selected{% endif %}>Bekliyor</option>
+                            <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>İptal</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="fas fa-puzzle-piece"></i> Modül</label>
+                        <select name="module" class="form-select">
+                            <option value="">Tümü</option>
+                            <option value="hair" {% if module == 'hair' %}selected{% endif %}>Saç Ekimi</option>
+                            <option value="dental" {% if module == 'dental' %}selected{% endif %}>Diş</option>
+                            <option value="eye" {% if module == 'eye' %}selected{% endif %}>Göz</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="fas fa-calendar"></i> Başlangıç</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ date_from or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="fas fa-calendar"></i> Bitiş</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ date_to or '' }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter"></i> Filtrele
+                        </button>
+                    </div>
+                </div>
+                {% if status or module or date_from or date_to %}
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <a href="{{ url_for('main.appointments') }}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-times"></i> Filtreleri Temizle
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Hasta</th>
+                            <th>Tarih</th>
+                            <th>Modüller</th>
+                            <th>Durum</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for encounter in encounters.items %}
+                        <tr>
+                            <td>{{ encounter.id }}</td>
+                            <td>
+                                <a href="{{ url_for('main.patient_detail', id=encounter.patient.id) }}">
+                                    {{ encounter.patient.full_name }}
+                                </a>
+                            </td>
+                            <td>{{ encounter.date.strftime('%d.%m.%Y %H:%M') if encounter.date else encounter.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>
+                                {% if encounter.hair_annotations or encounter.hair_patterns %}
+                                <span class="badge bg-info"><i class="fas fa-user"></i> Saç</span>
+                                {% endif %}
+                                {% if encounter.dental_procedures %}
+                                <span class="badge bg-primary"><i class="fas fa-tooth"></i> Diş</span>
+                                {% endif %}
+                                {% if encounter.eye_refraction or encounter.eye_treatments %}
+                                <span class="badge bg-success"><i class="fas fa-eye"></i> Göz</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if encounter.status == 'completed' else 'warning' }}">
+                                    {{ encounter.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.encounter_detail', id=encounter.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> Görüntüle
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Pagination #}
+            {% if encounters.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% for page in range(1, encounters.pages + 1) %}
+                    <li class="page-item {{ 'active' if page == encounters.page else '' }}">
+                        <a class="page-link" href="{{ url_for('main.appointments', page=page) }}">{{ page }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Profil - MSH Med Tour{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Kullanıcı Profili</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th width="30%">Kullanıcı Adı:</th>
+                            <td>{{ current_user.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>E-posta:</th>
+                            <td>{{ current_user.email or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Rol:</th>
+                            <td>{{ 'Admin' if current_user.is_admin else 'Kullanıcı' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Distribütör:</th>
+                            <td>{{ current_user.distributor.name if current_user.distributor else '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

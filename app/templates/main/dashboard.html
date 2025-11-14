@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Sayfa - MSH Med Tour{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="h3">Hoş Geldiniz, {{ current_user.first_name or current_user.username }}</h2>
+            <p class="text-muted">{{ current_user.distributor.name if current_user.distributor else 'Yönetim Paneli' }}</p>
+        </div>
+    </div>
+
+    <!-- Help Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <h5 class="alert-heading"><i class="fas fa-info-circle"></i> Nasıl Kullanılır?</h5>
+                <hr>
+                <p class="mb-2"><strong>1. Adım:</strong> Üst menüden <strong>"Hastalar"</strong> tıklayıp yeni hasta ekleyin.</p>
+                <p class="mb-2"><strong>2. Adım:</strong> Hasta detay sayfasında <strong>"Yeni Muayene"</strong> butonuna tıklayın.</p>
+                <p class="mb-2"><strong>3. Adım:</strong> Saç ekimi, diş tedavisi veya göz muayenesi bilgilerini girin.</p>
+                <p class="mb-0"><strong>4. Adım:</strong> Muayene tamamlandığında <strong>"PDF İndir"</strong> ile raporu alın.</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Toplam Hasta</h6>
+                            <h2 class="mt-2 mb-0">{{ patients_count }}</h2>
+                            <small class="text-success">+{{ new_patients_this_month }} bu ay</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-stethoscope fa-2x text-success"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Toplam Muayene</h6>
+                            <h2 class="mt-2 mb-0">{{ encounters_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user text-info fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Saç Ekimi</h6>
+                            <h2 class="mt-2 mb-0">{{ module_stats.hair }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-tooth text-warning fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Diş Tedavisi</h6>
+                            <h2 class="mt-2 mb-0">{{ module_stats.dental }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Usage Chart -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Modül Kullanım Dağılımı</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="moduleChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Aylık Muayene Sayısı (Son 6 Ay)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Hızlı Eylemler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('main.new_patient') }}" class="btn btn-primary w-100">
+                                <i class="fas fa-user-plus"></i> Yeni Hasta Ekle
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('main.patients') }}" class="btn btn-success w-100">
+                                <i class="fas fa-notes-medical"></i> Yeni Muayene
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('main.patients') }}?pdf=true" class="btn btn-danger w-100">
+                                <i class="fas fa-file-pdf"></i> PDF Oluştur
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Encounters -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Son Muayeneler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>Hasta</th>
+                                    <th>Modüller</th>
+                                    <th>Durum</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for encounter in recent_encounters %}
+                                <tr>
+                                    <td>{{ encounter.date.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>{{ encounter.patient.full_name }}</td>
+                                    <td>
+                                        {% if encounter.hair_annotations or encounter.hair_patterns %}
+                                        <i class="fas fa-cut text-primary" title="Saç"></i>
+                                        {% endif %}
+                                        {% if encounter.dental_procedures %}
+                                        <i class="fas fa-tooth text-warning" title="Diş"></i>
+                                        {% endif %}
+                                        {% if encounter.eye_refractions or encounter.eye_treatments %}
+                                        <i class="fas fa-eye text-success" title="Göz"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if encounter.status == 'final' else 'warning' }}">
+                                            {{ encounter.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('main.encounter_detail', id=encounter.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> Görüntüle
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Module Usage Pie Chart
+    const moduleCtx = document.getElementById('moduleChart').getContext('2d');
+    new Chart(moduleCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Saç Ekimi', 'Diş Tedavisi', 'Göz Tedavisi'],
+            datasets: [{
+                data: [{{ module_stats.hair }}, {{ module_stats.dental }}, {{ module_stats.eye }}],
+                backgroundColor: ['#17a2b8', '#ffc107', '#28a745'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Monthly Encounters Line Chart
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for stat in monthly_stats %}'{{ stat.month }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Muayene Sayısı',
+                data: [{% for stat in monthly_stats %}{{ stat.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

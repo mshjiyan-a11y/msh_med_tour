@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}İletişim Geçmişi{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-history me-2"></i>İletişim Geçmişi</h2>
+        <a href="{{ url_for('communication.add_communication_log') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Kayıt Ekle
+        </a>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <select name="type" class="form-select">
+                        <option value="">Tüm İletişim Türleri</option>
+                        <option value="call" {% if request.args.get('type') == 'call' %}selected{% endif %}>Telefon</option>
+                        <option value="email" {% if request.args.get('type') == 'email' %}selected{% endif %}>Email</option>
+                        <option value="sms" {% if request.args.get('type') == 'sms' %}selected{% endif %}>SMS</option>
+                        <option value="whatsapp" {% if request.args.get('type') == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+                        <option value="chat" {% if request.args.get('type') == 'chat' %}selected{% endif %}>Chat</option>
+                        <option value="video_call" {% if request.args.get('type') == 'video_call' %}selected{% endif %}>Video Görüşme</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Filtrele
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Kayıtlar -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Hasta</th>
+                            <th>Tür</th>
+                            <th>Yön</th>
+                            <th>Konu</th>
+                            <th>İletişim</th>
+                            <th>Süre</th>
+                            <th>Personel</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>
+                                <small>{{ log.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.patient_detail', id=log.patient_id) }}">
+                                    {{ log.patient.first_name }} {{ log.patient.last_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if log.communication_type == 'call' %}
+                                    <i class="fas fa-phone text-primary"></i> Telefon
+                                {% elif log.communication_type == 'email' %}
+                                    <i class="fas fa-envelope text-info"></i> Email
+                                {% elif log.communication_type == 'sms' %}
+                                    <i class="fas fa-sms text-warning"></i> SMS
+                                {% elif log.communication_type == 'whatsapp' %}
+                                    <i class="fab fa-whatsapp text-success"></i> WhatsApp
+                                {% elif log.communication_type == 'chat' %}
+                                    <i class="fas fa-comment text-primary"></i> Chat
+                                {% elif log.communication_type == 'video_call' %}
+                                    <i class="fas fa-video text-danger"></i> Video
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.direction == 'inbound' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-arrow-down"></i> Gelen
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-arrow-up"></i> Giden
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.subject or '-' }}</td>
+                            <td>
+                                <small class="text-muted">
+                                    {% if log.phone_number %}
+                                        <i class="fas fa-phone me-1"></i>{{ log.phone_number }}
+                                    {% elif log.email_address %}
+                                        <i class="fas fa-envelope me-1"></i>{{ log.email_address }}
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                {% if log.duration_seconds %}
+                                    {{ (log.duration_seconds // 60)|int }}:{{ '%02d' % (log.duration_seconds % 60) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.user %}
+                                    <small>{{ log.user.username }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if log.status == 'completed' else 'warning' if log.status == 'pending' else 'danger' }}">
+                                    {{ log.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if not logs %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-history fa-3x mb-3"></i>
+                <p>Henüz iletişim kaydı bulunmuyor</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

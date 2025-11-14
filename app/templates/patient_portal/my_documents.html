@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Evraklarım{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-folder-open me-2"></i>Evraklarım</h2>
+                <a href="{{ url_for('patient_portal.upload_document', patient_id=patient_id) }}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Yeni Evrak Yükle
+                </a>
+            </div>
+
+            {% if documents %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-file me-2"></i>Dosya</th>
+                                    <th><i class="fas fa-tag me-2"></i>Tür</th>
+                                    <th><i class="fas fa-hdd me-2"></i>Boyut</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Tarih</th>
+                                    <th class="text-center"><i class="fas fa-cog"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file-{{ 'pdf' if doc.mime_type == 'application/pdf' else ('image' if 'image' in doc.mime_type else 'alt') }} me-2"></i>
+                                        <strong>{{ doc.title }}</strong>
+                                        {% if doc.description %}
+                                        <br><small class="text-muted">{{ doc.description }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ doc.document_type }}</span>
+                                    </td>
+                                    <td>{{ (doc.file_size / 1024) | round(1) }} KB</td>
+                                    <td>{{ doc.uploaded_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td class="text-center">
+                                        <a href="{{ url_for('patient_portal.download_document', doc_id=doc.id, patient_id=patient_id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Henüz evrak yüklemediniz. Yukarıdaki butonu kullanarak evrak yükleyebilirsiniz.
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6><i class="fas fa-shield-alt me-2"></i>Güvenlik ve Gizlilik</h6>
+                        <ul class="mb-0 small">
+                            <li>Yüklediğiniz evraklar güvenli sunucularda saklanır</li>
+                            <li>Maksimum dosya boyutu: 10 MB</li>
+                            <li>İzin verilen formatlar: PDF, JPG, PNG, DOC, DOCX</li>
+                            <li>Evraklarınız sadece siz ve yetkili sağlık personeli tarafından görüntülenebilir</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

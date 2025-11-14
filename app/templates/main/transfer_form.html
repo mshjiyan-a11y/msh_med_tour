@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Transfer Ekle - {{ journey.journey_code }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card card-modern">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-car"></i> Transfer Bilgisi Ekle</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label required">Transfer Türü</label>
+                <select name="transfer_type" class="form-select" required>
+                  <option value="airport_pickup">Havalimanı Karşılama</option>
+                  <option value="airport_dropoff">Havalimanı Bırakma</option>
+                  <option value="hospital_transfer">Hastane Transferi</option>
+                  <option value="hotel_to_hospital">Otel -> Hastane</option>
+                  <option value="city_tour">Şehir Turu</option>
+                  <option value="custom">Özel</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label required">Planlanan Alış</label>
+                <input type="datetime-local" name="scheduled_pickup" class="form-control" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label required">Alış Lokasyonu</label>
+                <input type="text" name="pickup_location" class="form-control" placeholder="Örn: IST Havalimanı" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label required">Bırakma Lokasyonu</label>
+                <input type="text" name="dropoff_location" class="form-control" placeholder="Örn: Otel Adı" required>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Alış Adresi</label>
+                <textarea name="pickup_address" class="form-control" rows="2" placeholder="Adres...\n"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Bırakma Adresi</label>
+                <textarea name="dropoff_address" class="form-control" rows="2" placeholder="Adres..."></textarea>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Araç Tipi</label>
+                <select name="vehicle_type" class="form-select">
+                  <option value="">Seçiniz</option>
+                  <option value="sedan">Sedan</option>
+                  <option value="van">Vito / Van</option>
+                  <option value="minibus">Minibüs</option>
+                  <option value="wheelchair_accessible">Engelli Erişimli</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Araç Plaka</label>
+                <input type="text" name="vehicle_plate" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Tahmini Süre (dk)</label>
+                <input type="number" name="estimated_duration" class="form-control" min="0" step="5">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Sürücü Adı</label>
+                <input type="text" name="driver_name" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Sürücü Telefon</label>
+                <input type="text" name="driver_phone" class="form-control">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Yolcu Sayısı</label>
+                <input type="number" name="passenger_count" value="1" min="1" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Bagaj</label>
+                <select name="has_luggage" class="form-select">
+                  <option value="true">Var</option>
+                  <option value="false">Yok</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Tekerlekli Sandalye</label>
+                <select name="wheelchair_required" class="form-select">
+                  <option value="false" selected>Gerekli Değil</option>
+                  <option value="true">Gerekli</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Notlar</label>
+                <textarea name="notes" class="form-control" rows="3"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Özel Talimatlar</label>
+                <textarea name="special_instructions" class="form-control" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <a href="{{ url_for('journey.journey_detail', id=journey.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Geri</a>
+              <button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

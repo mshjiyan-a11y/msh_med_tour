@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}{{ distributor.name }} - Meta Ayarları{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fab fa-meta"></i> {{ distributor.name }} - Meta Lead Entegrasyonu</h2>
+            <p class="text-muted">Facebook Lead Ads'ten canlı leadleri çekmek için konfigürasyon</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('admin.view_distributor', id=distributor.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Geri
+            </a>
+            <a href="{{ url_for('facebook_leads.index') }}" class="btn btn-primary">
+                <i class="fas fa-list"></i> Leadleri Görüntüle
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fab fa-facebook"></i> Meta/Facebook Lead Ads Konfigürasyonu</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin.distributor_settings', id=distributor.id) }}">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Nasıl Ayarlanır?</h6>
+                            <ol class="mb-0">
+                                <li><a href="https://developers.facebook.com" target="_blank" rel="noopener">Meta for Developers</a>'a gidin</li>
+                                <li>Your Business Account'unuzu seçin</li>
+                                <li>Settings → Business Manager hesabından Page ID'sini kopyalayın</li>
+                                <li>Lead Form ID'sini bulun (Form ayarlarında)</li>
+                                <li>Access Token oluşturun (Long-lived, 60 gün geçerliliği olan)</li>
+                            </ol>
+                        </div>
+
+                        <!-- Page ID -->
+                        <div class="mb-3">
+                            <label for="page_id" class="form-label">
+                                <strong>Facebook Page ID</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control font-monospace" id="page_id" name="meta_page_id"
+                                   value="{{ meta_config.page_id or '' }}"
+                                   placeholder="123456789012345"
+                                   pattern="[0-9]{10,}"
+                                   required>
+                            <small class="text-muted">
+                                Meta Business Manager'da Business Settings → Pages'den Page ID'sini bulabilirsiniz
+                            </small>
+                        </div>
+
+                        <!-- Form ID -->
+                        <div class="mb-3">
+                            <label for="form_id" class="form-label">
+                                <strong>Lead Form ID</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control font-monospace" id="form_id" name="meta_form_id"
+                                   value="{{ meta_config.form_id or '' }}"
+                                   placeholder="987654321098765"
+                                   pattern="[0-9]{10,}"
+                                   required>
+                            <small class="text-muted">
+                                Facebook Ad Preferences'da Lead Form'u bulup ID'sini kopyalayın
+                            </small>
+                        </div>
+
+                        <!-- Access Token -->
+                        <div class="mb-3">
+                            <label for="access_token" class="form-label">
+                                <strong>Access Token</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control font-monospace" id="access_token" name="meta_access_token"
+                                      rows="5" required
+                                      placeholder="EAAxxxxxxxxxxxxx..."
+                                      spellcheck="false">{{ meta_config.access_token or '' }}</textarea>
+                            <small class="text-muted d-block mt-2">
+                                <strong>Dikkat:</strong> Long-lived token kullanın (60 gün geçerliliği olan). 
+                                Facebook App Token'i buraya yapıştırın.
+                            </small>
+                            <small class="text-muted">
+                                <a href="https://developers.facebook.com/docs/facebook-login/access-tokens" target="_blank" rel="noopener">
+                                    Access Token Dokumentasyonu
+                                </a>
+                            </small>
+                        </div>
+
+                        <!-- Fetch Interval -->
+                        <div class="mb-3">
+                            <label for="fetch_interval" class="form-label">
+                                <strong>Senkronizasyon Aralığı (dakika)</strong>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="fetch_interval" name="meta_fetch_interval"
+                                       value="{{ meta_config.fetch_interval_minutes or 5 }}"
+                                       min="5" max="1440">
+                                <span class="input-group-text">dakika</span>
+                            </div>
+                            <small class="text-muted">
+                                Her kaç dakikada bir Facebook'tan yeni leadleri çekmek istediğinizi belirleyin (minimum 5)
+                            </small>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="meta_is_active"
+                                   {% if meta_config and meta_config.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                <strong>Bu entegrasyonu etkinleştir</strong>
+                            </label>
+                            <small class="d-block text-muted mt-2">
+                                İşaretlenmişse, sistem otomatik olarak Meta'dan leadleri çekmeye başlayacak
+                            </small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Ayarları Kaydet
+                            </button>
+                            {% if meta_config %}
+                            <button type="button" class="btn btn-outline-info" id="testBtn">
+                                <i class="fas fa-plug"></i> Bağlantı Testi
+                            </button>
+                            <button type="button" class="btn btn-outline-success" id="syncBtn">
+                                <i class="fas fa-sync"></i> Şimdi Senkronize Et
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status Card -->
+            {% if meta_config %}
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat"></i> Entegrasyon Durumu</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Durum:</strong>
+                            {% if meta_config.is_active %}
+                            <span class="badge bg-success">✓ Aktif</span>
+                            {% else %}
+                            <span class="badge bg-secondary">○ Pasif</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Son Senkronizasyon:</strong>
+                            {% if meta_config.last_fetch_time %}
+                            <small>{{ meta_config.last_fetch_time.strftime('%d.%m.%Y %H:%M:%S') }}</small>
+                            {% else %}
+                            <small class="text-muted">Henüz yapılmadı</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if meta_config.last_error %}
+                    <div class="alert alert-danger mt-3 mb-0">
+                        <strong>Son Hata:</strong>
+                        <div class="small">{{ meta_config.last_error }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Info Card -->
+            <div class="card mb-4 bg-light">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb"></i> İpuçları</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong class="d-block mb-2">✓ Güvenli Token Depolama</strong>
+                        <small>Tokenler güvenli şekilde veritabanında depolanır</small>
+                    </div>
+                    <div class="mb-3">
+                        <strong class="d-block mb-2">✓ Otomatik Senkronizasyon</strong>
+                        <small>Belirlediğiniz aralıkta otomatik olarak leadler çekilir</small>
+                    </div>
+                    <div class="mb-3">
+                        <strong class="d-block mb-2">✓ Duplicate Koruması</strong>
+                        <small>Aynı lead iki kez kaydedilmez</small>
+                    </div>
+                    <div>
+                        <strong class="d-block mb-2">✓ Tam Tarih Desteği</strong>
+                        <small>Facebook'taki ve sistem üzerindeki tarihler tutulur</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Links Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-link"></i> Yardımcı Bağlantılar</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="https://developers.facebook.com/docs/marketing-api/guides/lead-ads" 
+                       target="_blank" rel="noopener" class="list-group-item list-group-item-action">
+                        Meta Lead Ads Docs
+                        <i class="fas fa-external-link-alt float-end"></i>
+                    </a>
+                    <a href="https://business.facebook.com" 
+                       target="_blank" rel="noopener" class="list-group-item list-group-item-action">
+                        Facebook Business Manager
+                        <i class="fas fa-external-link-alt float-end"></i>
+                    </a>
+                    <a href="https://developers.facebook.com/docs/facebook-login/access-tokens" 
+                       target="_blank" rel="noopener" class="list-group-item list-group-item-action">
+                        Access Token Guide
+                        <i class="fas fa-external-link-alt float-end"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Test Meta Connection
+document.getElementById('testBtn')?.addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Test ediliyor...';
+    
+    try {
+        const response = await fetch('{{ url_for("admin.test_meta_api", config_id=meta_config.id) }}', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✓ Bağlantı başarılı!\n\n' + data.message);
+        } else {
+            alert('✗ Bağlantı başarısız!\n\n' + data.message);
+        }
+    } catch (e) {
+        alert('Hata: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-plug"></i> Bağlantı Testi';
+    }
+});
+
+// Sync Leads
+document.getElementById('syncBtn')?.addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Senkronize ediliyor...';
+    
+    try {
+        const response = await fetch('{{ url_for("admin.sync_meta_leads", config_id=meta_config.id) }}', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✓ Senkronizasyon başarılı!\n\n' + data.message + 
+                  `\nAlınan: ${data.fetched}, Kaydedilen: ${data.stored}`);
+        } else {
+            alert('✗ Senkronizasyon başarısız!\n\n' + data.message);
+        }
+    } catch (e) {
+        alert('Hata: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> Şimdi Senkronize Et';
+    }
+});
+</script>
+{% endblock %}

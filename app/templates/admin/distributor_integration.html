@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block title %}{{ distributor.name }} - Lead Entegrasyonu{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.distributors') }}">Distribütörler</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.view_distributor', id=distributor.id) }}">{{ distributor.name }}</a></li>
+                    <li class="breadcrumb-item active">Lead Entegrasyonu</li>
+                </ol>
+            </nav>
+            <h2 class="h3"><i class="fas fa-plug"></i> {{ distributor.name }} - Lead Entegrasyonu</h2>
+            <p class="text-muted">Facebook reklamları ve web sitesi form entegrasyon ayarları</p>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="row">
+            <!-- Meta Facebook Lead Ads Integration -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fab fa-facebook"></i> Meta Lead Ads (Yeni)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Setup Adımları:</strong><br>
+                                1. <a href="https://developers.facebook.com" target="_blank" rel="noopener">Meta for Developers</a>'a gidin<br>
+                                2. Business Account'unuzu bağlayın<br>
+                                3. Lead Form ID'sini alın<br>
+                                4. Long-lived Access Token oluşturun<br>
+                            </small>
+                        </div>
+
+                        {% if meta_config %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check"></i> Meta konfigurasyonu aktif
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Facebook Page ID</label>
+                            <input type="text" name="meta_page_id" class="form-control" 
+                                   value="{{ meta_config.page_id or '' }}"
+                                   placeholder="123456789012345">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Lead Form ID</label>
+                            <input type="text" name="meta_form_id" class="form-control" 
+                                   value="{{ meta_config.form_id or '' }}"
+                                   placeholder="987654321098765">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Access Token</label>
+                            <textarea name="meta_access_token" class="form-control font-monospace" rows="4" 
+                                      placeholder="EAAxxxxxxxxxxxxx...">{{ meta_config.access_token or '' }}</textarea>
+                            <small class="text-muted">Long-lived token (60 gün geçerliliği olan)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Senkronizasyon Aralığı (dakika)</label>
+                            <input type="number" name="meta_fetch_interval" class="form-control" 
+                                   value="{{ meta_config.fetch_interval_minutes or 5 }}"
+                                   min="5" max="1440">
+                            <small class="text-muted">Kaç dakikada bir lead çekilsin (minimum 5)</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="meta_is_active" 
+                                   id="meta_active" {% if meta_config.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="meta_active">
+                                Meta Lead Entegrasyonunu Etkinleştir
+                            </label>
+                        </div>
+
+                        <div class="alert alert-secondary">
+                            <small>
+                                <strong>Son Senkronizasyon:</strong>
+                                {% if meta_config.last_fetch_time %}
+                                {{ meta_config.last_fetch_time.strftime('%d.%m.%Y %H:%M:%S') }}
+                                {% else %}
+                                Henüz senkronize edilmedi
+                                {% endif %}
+                            </small>
+                            {% if meta_config.last_error %}
+                            <div class="alert alert-danger mt-2 mb-0">
+                                <strong>Son Hata:</strong> {{ meta_config.last_error }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-primary" 
+                                    onclick="testMetaConnection({{ meta_config.id }})">
+                                <i class="fas fa-plug"></i> Bağlantı Testi
+                            </button>
+                            <button type="button" class="btn btn-outline-info" 
+                                    onclick="syncMetaLeads({{ meta_config.id }})">
+                                <i class="fas fa-sync"></i> Şimdi Senkronize Et
+                            </button>
+                        </div>
+
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Meta konfigurasyonu henüz oluşturulmadı
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Facebook Page ID</label>
+                            <input type="text" name="meta_page_id" class="form-control" 
+                                   placeholder="123456789012345">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Lead Form ID</label>
+                            <input type="text" name="meta_form_id" class="form-control" 
+                                   placeholder="987654321098765">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Access Token</label>
+                            <textarea name="meta_access_token" class="form-control font-monospace" rows="4" 
+                                      placeholder="EAAxxxxxxxxxxxxx..."></textarea>
+                            <small class="text-muted">Long-lived token (60 gün geçerliliği olan)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Senkronizasyon Aralığı (dakika)</label>
+                            <input type="number" name="meta_fetch_interval" class="form-control" 
+                                   value="5" min="5" max="1440">
+                            <small class="text-muted">Kaç dakikada bir lead çekilsin (minimum 5)</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="meta_is_active" 
+                                   id="meta_active">
+                            <label class="form-check-label" for="meta_active">
+                                Meta Lead Entegrasyonunu Etkinleştir
+                            </label>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Facebook Lead Ads Integration (Legacy)
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fab fa-facebook"></i> Facebook Lead Ads
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Adımlar:</strong><br>
+                                1. <a href="https://developers.facebook.com" target="_blank">Meta for Developers</a>'a gidin<br>
+                                2. Bir App oluşturun ve Leadgen izni alın<br>
+                                3. Sayfa ID'sini ve Access Token'ı buraya girin<br>
+                                4. Webhook URL: <code>{{ request.url_root }}api/v1/facebook/webhook</code>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Facebook Page ID</label>
+                            <input type="text" name="facebook_page_id" class="form-control" 
+                                   value="{{ distributor.facebook_page_id or '' }}"
+                                   placeholder="123456789012345">
+                            <small class="text-muted">Sayfa ayarlarından bulabilirsiniz</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Page Access Token</label>
+                            <textarea name="facebook_access_token" class="form-control" rows="3" 
+                                      placeholder="EAAxxxxxxxxxxxxx...">{{ distributor.facebook_access_token or '' }}</textarea>
+                            <small class="text-muted">Long-lived token kullanın (60 gün)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Webhook Secret</label>
+                            <input type="text" name="webhook_secret" class="form-control" 
+                                   value="{{ distributor.webhook_secret or '' }}"
+                                   placeholder="msh_med_tour_2025">
+                            <small class="text-muted">Webhook doğrulama için özel kod</small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <small>
+                                <strong>Webhook Ayarları:</strong><br>
+                                URL: <code>{{ request.url_root }}api/v1/facebook/webhook</code><br>
+                                Verify Token: <code>msh_med_tour_2025_verify</code>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Website Form Integration -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-globe"></i> Web Sitesi Form Entegrasyonu
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Web sitenizde kullanım:</strong><br>
+                                Form gönderirken bu API key'i kullanın
+                            </small>
+                        </div>
+
+                        {% if distributor.website_api_key %}
+                        <div class="mb-3">
+                            <label class="form-label">Aktif API Key</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" 
+                                       value="{{ distributor.website_api_key }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        onclick="navigator.clipboard.writeText('{{ distributor.website_api_key }}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="generate_api_key" value="yes" id="regenerate">
+                            <label class="form-check-label" for="regenerate">
+                                Yeni API Key Oluştur (Eskisi geçersiz olur)
+                            </label>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            API Key henüz oluşturulmadı
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="generate_api_key" value="yes" id="generate" checked>
+                            <label class="form-check-label" for="generate">
+                                API Key Oluştur
+                            </label>
+                        </div>
+                        {% endif %}
+
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>Örnek JavaScript Kodu:</h6>
+                                <pre class="mb-0"><code class="language-javascript">fetch('{{ request.url_root }}api/v1/leads', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': '{{ distributor.website_api_key or "YOUR_API_KEY" }}',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    source: 'website',
+    first_name: document.getElementById('first_name').value,
+    last_name: document.getElementById('last_name').value,
+    email: document.getElementById('email').value,
+    phone: document.getElementById('phone').value,
+    interested_service: 'hair',
+    message: document.getElementById('message').value
+  })
+}).then(r => r.json())
+  .then(data => console.log('Lead oluşturuldu:', data));</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current API Keys -->
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-key"></i> Tüm API Keys
+                            <button type="button" class="btn btn-sm btn-primary float-end" 
+                                    data-bs-toggle="modal" data-bs-target="#newApiKeyModal">
+                                <i class="fas fa-plus"></i> Yeni API Key
+                            </button>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>İsim</th>
+                                    <th>API Key</th>
+                                    <th>İzinli Kaynaklar</th>
+                                    <th>Kullanım</th>
+                                    <th>Durum</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key in api_keys %}
+                                <tr>
+                                    <td><strong>{{ key.key_name }}</strong></td>
+                                    <td>
+                                        <code class="small">{{ key.api_key[:20] }}...</code>
+                                        <button class="btn btn-sm btn-link" type="button"
+                                                onclick="navigator.clipboard.writeText('{{ key.api_key }}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                    <td>{{ key.allowed_sources }}</td>
+                                    <td>
+                                        {{ key.usage_count }} kez<br>
+                                        {% if key.last_used_at %}
+                                        <small class="text-muted">Son: {{ key.last_used_at.strftime('%d.%m.%Y') }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if key.is_active %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('admin.toggle_api_key', id=key.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-power-off"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin.delete_api_key', id=key.id) }}" 
+                                              class="d-inline" onsubmit="return confirm('Emin misiniz?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Henüz API key yok</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('admin.view_distributor', id=distributor.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Geri
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Ayarları Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- New API Key Modal -->
+<div class="modal fade" id="newApiKeyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.create_distributor_api_key', id=distributor.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Yeni API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">İsim</label>
+                        <input type="text" name="key_name" class="form-control" 
+                               placeholder="Örn: Mobile App" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İzinli Kaynaklar</label>
+                        <input type="text" name="allowed_sources" class="form-control" 
+                               value="website,facebook,instagram"
+                               placeholder="website,facebook,instagram">
+                        <small class="text-muted">Virgülle ayırın</small>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="can_read_leads" id="can_read">
+                        <label class="form-check-label" for="can_read">
+                            Lead'leri okuma izni ver
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

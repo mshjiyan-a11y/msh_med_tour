@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}{% if role %}Rol Düzenle{% else %}Yeni Rol{% endif %}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header">
+        <h4>{% if role %}Rol Düzenle: {{ role.display_name }}{% else %}Yeni Rol Oluştur{% endif %}</h4>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% if not role %}
+          <div class="mb-3">
+            <label class="form-label">Rol Adı (Sistem İçi) <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" required pattern="[a-z_]+" placeholder="ornek_rol">
+            <div class="form-text">Küçük harf ve alt çizgi, boşluk yok</div>
+          </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label">Görünen Ad <span class="text-danger">*</span></label>
+            <input type="text" name="display_name" class="form-control" required value="{% if role %}{{ role.display_name }}{% endif %}">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Açıklama</label>
+            <textarea name="description" class="form-control" rows="2">{% if role %}{{ role.description }}{% endif %}</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Yetkiler</label>
+            {% set categories = permissions|groupby('category') %}
+            {% for category, perms in categories %}
+              <div class="card mb-2">
+                <div class="card-header py-2">
+                  <strong>{{ category or 'Diğer' }}</strong>
+                </div>
+                <div class="card-body py-2">
+                  {% for p in perms %}
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="permissions" value="{{ p.id }}" id="perm{{ p.id }}"
+                        {% if role and p.id in role_permission_ids %}checked{% endif %}>
+                      <label class="form-check-label" for="perm{{ p.id }}">
+                        <strong>{{ p.display_name }}</strong> <small class="text-muted">({{ p.name }})</small>
+                        {% if p.description %}<br><small class="text-muted">{{ p.description }}</small>{% endif %}
+                      </label>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="{{ url_for('admin.roles') }}" class="btn btn-secondary">İptal</a>
+            <button type="submit" class="btn btn-primary">{% if role %}Güncelle{% else %}Oluştur{% endif %}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

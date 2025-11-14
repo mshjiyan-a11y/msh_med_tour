@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Yönetim Paneli - MSH Med Tour{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="h3">Yönetim Paneli</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-building"></i> Distribütörler</h5>
+                    <p class="card-text display-4">{{ distributors_count }}</p>
+                    <a href="{{ url_for('admin.distributors') }}" class="btn btn-primary">Yönet</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-users"></i> Kullanıcılar</h5>
+                    <p class="card-text display-4">{{ users_count }}</p>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-primary">Yönet</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fab fa-facebook"></i> Facebook Lead Ads</h5>
+                    <p class="card-text display-4">{{ facebook_leads_count }}</p>
+                    <a href="{{ url_for('admin.facebook_leads_list') }}" class="btn btn-primary">Listele</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Hızlı İşlemler</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('admin.new_distributor') }}" class="btn btn-success me-2">
+                        <i class="fas fa-plus"></i> Yeni Distribütör
+                    </a>
+                    <a href="{{ url_for('admin.new_user') }}" class="btn btn-success">
+                        <i class="fas fa-user-plus"></i> Yeni Kullanıcı
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

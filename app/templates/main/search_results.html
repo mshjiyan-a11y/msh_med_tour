@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Arama Sonuçları{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h3 class="mb-3"><i class="fas fa-search"></i> Arama Sonuçları: "{{ query }}"</h3>
+
+    <!-- Category filter -->
+    <div class="btn-group mb-3">
+      <a href="{{ url_for('main.global_search', q=query, category='all') }}" class="btn btn-sm {% if category=='all' %}btn-primary{% else %}btn-outline-primary{% endif %}">Tümü</a>
+      <a href="{{ url_for('main.global_search', q=query, category='patients') }}" class="btn btn-sm {% if category=='patients' %}btn-primary{% else %}btn-outline-primary{% endif %}">Hastalar</a>
+      <a href="{{ url_for('main.global_search', q=query, category='encounters') }}" class="btn btn-sm {% if category=='encounters' %}btn-primary{% else %}btn-outline-primary{% endif %}">Muayeneler</a>
+      <a href="{{ url_for('main.global_search', q=query, category='documents') }}" class="btn btn-sm {% if category=='documents' %}btn-primary{% else %}btn-outline-primary{% endif %}">Dokümanlar</a>
+      <a href="{{ url_for('main.global_search', q=query, category='appointments') }}" class="btn btn-sm {% if category=='appointments' %}btn-primary{% else %}btn-outline-primary{% endif %}">Randevular</a>
+    </div>
+
+    {% if not query or query|length < 2 %}
+      <div class="alert alert-info">Lütfen en az 2 karakter girin.</div>
+    {% else %}
+      {% set total = patients|length + encounters|length + documents|length + appointments|length %}
+      <p class="text-muted">Toplam {{ total }} sonuç bulundu.</p>
+
+      <!-- Patients -->
+      {% if patients %}
+        <div class="card mb-3">
+          <div class="card-header"><strong>Hastalar ({{ patients|length }})</strong></div>
+          <div class="list-group list-group-flush">
+            {% for p in patients %}
+              <a href="{{ url_for('main.patient_detail', id=p.id) }}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <i class="fas fa-user text-primary"></i>
+                    <strong>{{ p.first_name }} {{ p.last_name }}</strong>
+                    <span class="text-muted">{{ p.phone }}</span>
+                  </div>
+                  <small class="text-muted">{{ p.nationality or '' }}</small>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Encounters -->
+      {% if encounters %}
+        <div class="card mb-3">
+          <div class="card-header"><strong>Muayeneler ({{ encounters|length }})</strong></div>
+          <div class="list-group list-group-flush">
+            {% for e in encounters %}
+              <a href="{{ url_for('main.encounter_detail', id=e.id) }}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <i class="fas fa-notes-medical text-success"></i>
+                    <strong>{{ e.patient.first_name }} {{ e.patient.last_name }}</strong> - {{ e.date.strftime('%d.%m.%Y') }}
+                    <span class="badge bg-secondary">{{ e.status }}</span>
+                  </div>
+                </div>
+                {% if e.note %}<div class="small text-muted mt-1">{{ e.note[:100] }}</div>{% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Documents -->
+      {% if documents %}
+        <div class="card mb-3">
+          <div class="card-header"><strong>Dokümanlar ({{ documents|length }})</strong></div>
+          <div class="list-group list-group-flush">
+            {% for d in documents %}
+              <a href="{{ url_for('main.view_document', id=d.id) }}" class="list-group-item list-group-item-action" target="_blank">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <i class="fas fa-file-alt text-info"></i>
+                    <strong>{{ d.title }}</strong>
+                    <span class="badge bg-secondary">{{ d.document_type }}</span>
+                  </div>
+                  <small class="text-muted">{{ d.uploaded_at.strftime('%d.%m.%Y') }}</small>
+                </div>
+                {% if d.description %}<div class="small text-muted mt-1">{{ d.description[:100] }}</div>{% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Appointments -->
+      {% if appointments %}
+        <div class="card mb-3">
+          <div class="card-header"><strong>Randevular ({{ appointments|length }})</strong></div>
+          <div class="list-group list-group-flush">
+            {% for a in appointments %}
+              <a href="{{ url_for('main.edit_appointment', id=a.id) }}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <i class="fas fa-calendar-alt text-warning"></i>
+                    <strong>{{ a.title }}</strong> - {{ a.patient.first_name }} {{ a.patient.last_name }}
+                  </div>
+                  <small class="text-muted">{{ a.start_time.strftime('%d.%m.%Y %H:%M') }}</small>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if total == 0 %}
+        <div class="alert alert-warning">Sonuç bulunamadı.</div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

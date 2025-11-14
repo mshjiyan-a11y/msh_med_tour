@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}{{ journey.journey_code }} - Yolculuk Detayı{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 50px;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(to bottom, #667eea, #764ba2);
+    }
+    .timeline-item {
+        position: relative;
+        padding: 20px 20px 20px 90px;
+        margin-bottom: 30px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: 38px;
+        top: 25px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        z-index: 2;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .timeline-marker.completed {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        color: white;
+    }
+    .timeline-marker.in_progress {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+        animation: pulse 2s infinite;
+    }
+    .timeline-marker.pending {
+        background: #e2e8f0;
+        color: #718096;
+    }
+    .timeline-marker.cancelled {
+        background: #cbd5e0;
+        color: #4a5568;
+        text-decoration: line-through;
+    }
+    .timeline-marker.delayed {
+        background: linear-gradient(135deg, #fa709a, #fee140);
+        color: white;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    .timeline-content {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        cursor: move;
+    }
+    .timeline-content:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    .timeline-item.sortable-ghost {
+        opacity: 0.4;
+    }
+    .timeline-item.sortable-drag {
+        cursor: grabbing !important;
+    }
+    .step-critical {
+        border-left: 4px solid #e53e3e;
+    }
+    .step-type-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .journey-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+    }
+    .progress-ring {
+        width: 100px;
+        height: 100px;
+    }
+    .quick-actions {
+        position: sticky;
+        top: 80px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Journey Header -->
+    <div class="journey-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-route"></i> {{ journey.journey_code }}</h2>
+                <h4>{{ journey.patient.full_name }}</h4>
+                <p class="mb-1"><i class="fas fa-plane-arrival"></i> Varış: {{ journey.arrival_date.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p class="mb-1"><i class="fas fa-plane-departure"></i> Dönüş: {{ journey.departure_date.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p class="mb-0"><i class="fas fa-calendar-day"></i> Süre: {{ journey.duration_days() }} gün</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-inline-block text-center">
+                    <h1 class="mb-0">{{ journey.progress_percentage() }}%</h1>
+                    <small>Tamamlanma</small>
+                    <div class="mt-2">
+                        <span class="badge badge-lg 
+                            {% if journey.status == 'completed' %}bg-success
+                            {% elif journey.status == 'in_progress' %}bg-primary
+                            {% elif journey.status == 'cancelled' %}bg-secondary
+                            {% else %}bg-info{% endif %}">
+                            {{ journey.status|upper }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if journey.purpose %}
+        <div class="mt-3 p-3 bg-white bg-opacity-10 rounded">
+            <strong>Amaç:</strong> {{ journey.purpose }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <!-- Timeline -->
+            <div class="card card-modern">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list-timeline"></i> Yolculuk Zaman Çizelgesi</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="filterSteps('all')">Tümü</button>
+                        <button class="btn btn-outline-success" onclick="filterSteps('completed')">Tamamlanan</button>
+                        <button class="btn btn-outline-warning" onclick="filterSteps('pending')">Bekleyen</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for step in steps %}
+                        <div class="timeline-item" data-id="{{ step.id }}" data-status="{{ step.status }}">
+                            <div class="timeline-marker {{ step.status }}">
+                                <i class="fas 
+                                    {% if step.status == 'completed' %}fa-check
+                                    {% elif step.status == 'in_progress' %}fa-spinner fa-spin
+                                    {% elif step.status == 'cancelled' %}fa-times
+                                    {% elif step.status == 'delayed' %}fa-clock
+                                    {% else %}fa-circle{% endif %}">
+                                </i>
+                            </div>
+                            
+                            <div class="timeline-content {% if step.is_critical %}step-critical{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            {{ step.title }}
+                                            {% if step.is_critical %}
+                                            <span class="badge bg-danger ms-2">KRİTİK</span>
+                                            {% endif %}
+                                        </h5>
+                                        <span class="step-type-badge bg-light text-dark">{{ step.step_type }}</span>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#" onclick="updateStepStatus({{ step.id }}, 'in_progress')">
+                                                <i class="fas fa-play text-primary"></i> Başlat</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStepStatus({{ step.id }}, 'completed')">
+                                                <i class="fas fa-check text-success"></i> Tamamlandı</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStepStatus({{ step.id }}, 'delayed')">
+                                                <i class="fas fa-clock text-warning"></i> Gecikti</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStepStatus({{ step.id }}, 'cancelled')">
+                                                <i class="fas fa-times text-danger"></i> İptal Et</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                {% if step.description %}
+                                <p class="text-muted mb-2">{{ step.description }}</p>
+                                {% endif %}
+                                
+                                <div class="row g-2 small">
+                                    <div class="col-md-6">
+                                        <i class="fas fa-calendar text-primary"></i> 
+                                        <strong>Tarih:</strong> {{ step.scheduled_date.strftime('%d.%m.%Y %H:%M') }}
+                                    </div>
+                                    {% if step.duration_minutes %}
+                                    <div class="col-md-6">
+                                        <i class="fas fa-hourglass-half text-info"></i>
+                                        <strong>Süre:</strong> {{ step.duration_minutes }} dk
+                                    </div>
+                                    {% endif %}
+                                    {% if step.location %}
+                                    <div class="col-md-6">
+                                        <i class="fas fa-map-marker-alt text-danger"></i>
+                                        <strong>Konum:</strong> {{ step.location }}
+                                    </div>
+                                    {% endif %}
+                                    {% if step.contact_person %}
+                                    <div class="col-md-6">
+                                        <i class="fas fa-user text-success"></i>
+                                        <strong>İletişim:</strong> {{ step.contact_person }}
+                                        {% if step.contact_phone %}({{ step.contact_phone }}){% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if step.notes %}
+                                <div class="mt-2 p-2 bg-light rounded small">
+                                    <i class="fas fa-sticky-note"></i> {{ step.notes }}
+                                </div>
+                                {% endif %}
+                                
+                                {% if step.actual_end %}
+                                <div class="mt-2 text-success small">
+                                    <i class="fas fa-check-circle"></i> Tamamlandı: {{ step.actual_end.strftime('%d.%m.%Y %H:%M') }}
+                                    {% if step.completer %}
+                                    ({{ step.completer.username }})
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flights Section -->
+            {% if flights %}
+            <div class="card card-modern mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-plane"></i> Uçuş Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    {% for flight in flights %}
+                    <div class="d-flex align-items-center p-3 mb-2 bg-light rounded">
+                        <div class="me-3">
+                            <i class="fas fa-plane-{% if flight.flight_type == 'arrival' %}arrival{% else %}departure{% endif %} fa-2x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">{{ flight.airline }} {{ flight.flight_number }}</h6>
+                            <small class="text-muted">
+                                {{ flight.departure_city }} ({{ flight.departure_airport }}) → 
+                                {{ flight.arrival_city }} ({{ flight.arrival_airport }})
+                            </small>
+                            <br>
+                            <small>
+                                <i class="fas fa-clock"></i> Kalkış: {{ flight.scheduled_departure.strftime('%d.%m %H:%M') }} |
+                                Varış: {{ flight.scheduled_arrival.strftime('%d.%m %H:%M') }}
+                                {% if flight.booking_reference %}
+                                | PNR: <strong>{{ flight.booking_reference }}</strong>
+                                {% endif %}
+                            </small>
+                        </div>
+                        <span class="badge bg-{{ 'success' if flight.status == 'landed' else 'info' }}">
+                            {{ flight.status|upper }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Transfers Section -->
+            {% if transfers %}
+            <div class="card card-modern mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-car"></i> Transfer Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    {% for transfer in transfers %}
+                    <div class="d-flex align-items-center p-3 mb-2 bg-light rounded">
+                        <div class="me-3">
+                            <i class="fas fa-shuttle-van fa-2x text-warning"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">{{ transfer.pickup_location }} → {{ transfer.dropoff_location }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ transfer.scheduled_pickup.strftime('%d.%m.%Y %H:%M') }}
+                                {% if transfer.estimated_duration %}(~{{ transfer.estimated_duration }} dk){% endif %}
+                            </small>
+                            {% if transfer.driver_name %}
+                            <br><small><i class="fas fa-user"></i> {{ transfer.driver_name }} - {{ transfer.driver_phone }}</small>
+                            {% endif %}
+                        </div>
+                        <span class="badge bg-{{ 'success' if transfer.status == 'completed' else 'primary' }}">
+                            {{ transfer.status|upper }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="quick-actions">
+                <!-- Quick Info -->
+                <div class="card card-modern mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Hızlı Bilgi</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if journey.coordinator %}
+                        <p class="mb-2">
+                            <strong>Koordinatör:</strong><br>
+                            <i class="fas fa-user-tie"></i> {{ journey.coordinator.username }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if journey.emergency_contact %}
+                        <p class="mb-2">
+                            <strong>Acil İletişim:</strong><br>
+                            <i class="fas fa-phone-alt text-danger"></i> {{ journey.emergency_contact }}
+                        </p>
+                        {% endif %}
+                        
+                        <p class="mb-0">
+                            <strong>Durum:</strong><br>
+                            <span class="badge bg-{{ 'success' if journey.status == 'completed' else 'primary' }}">
+                                {{ journey.status|upper }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card card-modern">
+                    <div class="card-header">
+                        <h6 class="mb-0">İşlemler</h6>
+                    </div>
+                    <div class="card-body">
+                        <a href="{{ url_for('journey.add_journey_step', id=journey.id) }}" class="btn btn-primary btn-sm w-100 mb-2">
+                            <i class="fas fa-plus"></i> Adım Ekle
+                        </a>
+                        <a href="{{ url_for('journey.add_flight', id=journey.id) }}" class="btn btn-info btn-sm w-100 mb-2">
+                            <i class="fas fa-plane"></i> Uçuş Ekle
+                        </a>
+                        <a href="{{ url_for('journey.add_transfer', id=journey.id) }}" class="btn btn-warning btn-sm w-100 mb-2">
+                            <i class="fas fa-car"></i> Transfer Ekle
+                        </a>
+                        <hr>
+                        <a href="{{ url_for('journey.edit_journey', id=journey.id) }}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </a>
+                        <a href="{{ url_for('journey.patient_journeys', patient_id=journey.patient_id) }}" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="fas fa-arrow-left"></i> Tüm Yolculuklar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateStepStatus(stepId, newStatus) {
+    if (!confirm(`Adım durumunu "${newStatus}" olarak güncellemek istediğinizden emin misiniz?`)) {
+        return;
+    }
+    
+    fetch(`/journey/step/${stepId}/update-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Durum güncellendi', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Hata: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showToast('Bir hata oluştu', 'danger');
+        console.error('Error:', error);
+    });
+}
+
+function filterSteps(status) {
+    const items = document.querySelectorAll('.timeline-item');
+    items.forEach(item => {
+        if (status === 'all' || item.dataset.status === status) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+// Sortable.js for drag-drop reordering
+document.addEventListener('DOMContentLoaded', function() {
+    const timeline = document.querySelector('.timeline');
+    if (timeline) {
+        new Sortable(timeline, {
+            handle: '.timeline-content',
+            animation: 150,
+            draggable: '.timeline-item',
+            onEnd: function(evt) {
+                const stepIds = [];
+                document.querySelectorAll('.timeline-item').forEach(item => {
+                    stepIds.push(parseInt(item.dataset.id));
+                });
+                
+                fetch('/journey/{{ journey.id }}/reorder-steps', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ step_ids: stepIds })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Sıralama kaydedildi', 'success');
+                    } else {
+                        showToast('Hata: ' + data.message, 'danger');
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    showToast('Sıralama kaydedilemedi', 'danger');
+                    console.error(error);
+                });
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+
